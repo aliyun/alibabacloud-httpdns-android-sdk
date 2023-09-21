@@ -1,0 +1,20 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.AlicloudHttpDnsDemo" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/cloud_blue</item>
+        <item name="colorPrimaryDark">@color/cloud_blue</item>
+        <item name="colorAccent">@color/cloud_blue</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <!-- Customize your theme here. -->
+    </style>
+
+    <style name="Theme.AlicloudHttpDnsDemo.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.AlicloudHttpDnsDemo.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.AlicloudHttpDnsDemo.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark" />
+</resources>

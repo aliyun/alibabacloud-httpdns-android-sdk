@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_basic"
+        android:icon="@drawable/ic_home_black_24dp"
+        android:title="@string/title_basic" />
+
+    <item
+        android:id="@+id/navigation_resolve"
+        android:icon="@drawable/ic_dns"
+        android:title="@string/title_resolve" />
+
+    <item
+        android:id="@+id/navigation_best_practice"
+        android:icon="@drawable/ic_practice"
+        android:title="@string/title_best_practice" />
+
+    <item
+        android:id="@+id/navigation_information"
+        android:icon="@drawable/ic_information"
+        android:title="@string/title_info" />
+
+</menu>

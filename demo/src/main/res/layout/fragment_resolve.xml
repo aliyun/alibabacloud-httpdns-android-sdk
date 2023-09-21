@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="viewModel"
+            type="com.alibaba.ams.emas.demo.ui.resolve.ResolveViewModel" />
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.resolve.ResolveFragment">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/basic_scroll_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:scrollbarStyle="insideOverlay"
+                android:scrollbars="vertical"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_percent="@dimen/content_max_width_percent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:padding="5dp"
+                            android:text="@string/network_request_type"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <RadioGroup
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:checkedButton="@id/okhttp"
+                            android:onCheckedChanged="@{viewModel::onNetRequestTypeChanged}"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/okhttp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="OkHttp"
+                                android:textSize="14dp" />
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/http_url_connection"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                android:text="HttpURLConnection"
+                                android:textSize="14dp" />
+
+                        </RadioGroup>
+
+                    </RelativeLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_async_resolve"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.asyncResolve}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableAsync}"
+                        android:text="@string/async_resolve"
+                        android:textSize="16dp" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?selectableItemBackground"
+                        android:onClick="@{() -> viewModel.setResolveIpType()}"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:padding="5dp"
+                            android:text="@string/ip_type"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/info_region"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.currentIpType)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="V4" />
+
+                    </RelativeLayout>
+
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/resolve_host_input_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@android:color/transparent"
+                        android:backgroundTint="@color/white"
+                        android:hint="@string/input_the_resolve_host"
+                        app:boxBackgroundColor="@android:color/transparent"
+                        app:errorEnabled="true"
+                        app:helperText="@string/input_the_resolve_host_help_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/request_api_input_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@android:color/transparent"
+                        android:backgroundTint="@color/white"
+                        android:hint="@string/input_the_request_api"
+                        app:boxBackgroundColor="@android:color/transparent"
+                        app:errorEnabled="true"
+                        app:helperText="@string/input_the_request_api_help_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:padding="5dp"
+                            android:text="@string/schema_type"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <RadioGroup
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:checkedButton="@id/schema_https"
+                            android:onCheckedChanged="@{viewModel::onSchemaTypeChanged}"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/schema_https"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Https"
+                                android:textSize="14dp" />
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/schema_http"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                android:text="Http"
+                                android:textSize="14dp" />
+
+                        </RadioGroup>
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/start_resolve"
+                            style="@style/Widget.MaterialComponents.Button.Icon"
+                            android:layout_width="150dp"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp"
+                            android:text="@string/resolve_and_request"
+                            app:cornerRadius="20dp"
+                            app:icon="@drawable/ic_httpdns"
+                            app:iconGravity="textStart"
+                            app:iconPadding="8dp"
+                            app:iconSize="24dp"
+                            app:iconTint="@color/white"
+                            app:rippleColor="@color/cloud_blue"
+                            app:strokeColor="@color/white"
+                            app:strokeWidth="2dp" />
+                    </RelativeLayout>
+
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

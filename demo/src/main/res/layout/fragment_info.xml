@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.aliyun.ams.httpdns.demo.BuildConfig" />
+
+        <variable
+            name="viewModel"
+            type="com.alibaba.ams.emas.demo.ui.info.InfoViewModel" />
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.info.InfoFragment">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/basic_scroll_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:scrollbarStyle="insideOverlay"
+                android:scrollbars="vertical"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_percent="@dimen/content_max_width_percent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    >
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="15dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="15dp"
+                        android:paddingBottom="10dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@mipmap/ic_launcher" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="20dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/info_app_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/app_name"
+                                android:textSize="16dp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/info_pkg_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:textSize="15dp"
+                                tools:text="com.aliyun.ams.httpdns.demo" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="5dp"
+                        android:background="@color/light_grey" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="AccoutId"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/info_account_id"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.accountId)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="12345" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/info_secret_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="SecretKey"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/info_secret_key"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.secretKey)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="12345" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/jump_to_pre_resolve"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:background="?selectableItemBackground">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/pre_resolve_list"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/jump_to_ip_probe"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:background="?selectableItemBackground">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/ip_probe_list"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/jump_to_ttl_cache"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:background="?selectableItemBackground">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/ttl_cache_list"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/jump_to_host_fiex_ip"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:background="?selectableItemBackground">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/host_fixed_ip_list"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/httpdns_sdk_version"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{BuildConfig.HTTPDNS_VERSION}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/ip_stack"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.currentIpStackType)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp" />
+
+                    </RelativeLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
+                        android:onClick="@{() -> viewModel.clearAllCache()}"
+                        android:padding="18dp"
+                        android:text="@string/clear_all_cache"
+                        android:textColor="@color/black"
+                        android:textSize="16dp"
+                        android:background="?selectableItemBackground"
+                        />
+                    FragmentBestPracticeBinding
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

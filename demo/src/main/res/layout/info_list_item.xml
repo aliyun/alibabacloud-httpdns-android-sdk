@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.alibaba.ams.emas.demo.widget.SwipeLayout
+        android:id="@+id/host_and_port_or_ttl_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:contentView="@id/host_port_ttl_item"
+        app:menuView="@id/slide_delete_menu">
+
+        <LinearLayout
+            android:id="@+id/host_port_ttl_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:padding="5dp"
+                    android:text="@string/host"
+                    android:textColor="@color/black"
+                    android:textSize="15dp" />
+
+                <TextView
+                    android:id="@+id/host_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:padding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="15dp"
+                    android:maxLines="2"
+                    android:ellipsize="marquee"
+                    tools:text="www.aliyun.com" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/port_or_ttl_indicate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:padding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="15dp"
+                    tools:text="@string/port" />
+
+                <TextView
+                    android:id="@+id/port_or_ttl_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:padding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="15dp"
+                    android:maxLines="2"
+                    android:ellipsize="marquee"
+                    tools:text="8888" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1.6dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="#30BDBDBD" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/slide_delete_menu"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="6dp"
+            android:background="#D32F2F"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:padding="5dp"
+                android:text="@string/delete"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+        </RelativeLayout>
+    </com.alibaba.ams.emas.demo.widget.SwipeLayout>
+
+    <com.alibaba.ams.emas.demo.widget.SwipeLayout
+        android:id="@+id/host_fixed_ip_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:contentView="@id/host_fixed_ip_item"
+        app:menuView="@id/slide_delete_menu2">
+
+        <LinearLayout
+            android:id="@+id/host_fixed_ip_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/pre_host_or_with_fixed_ip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:padding="5dp"
+                android:textColor="@color/black"
+                android:textSize="17dp"
+                tools:text="www.aliyun.com" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1.6dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="#30BDBDBD" />
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/slide_delete_menu2"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="6dp"
+            android:background="#D32F2F"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:padding="5dp"
+                android:text="@string/delete"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+        </RelativeLayout>
+    </com.alibaba.ams.emas.demo.widget.SwipeLayout>
+
+</LinearLayout>

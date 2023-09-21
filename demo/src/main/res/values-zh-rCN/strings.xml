@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">阿里云HttpDNS官方Demo</string>
+    <string name="title_basic">基础设置</string>
+    <string name="title_resolve">HttpDNS解析</string>
+    <string name="title_best_practice">最佳实践</string>
+    <string name="title_info">信息</string>
+
+    <string name="enable_expired_ip">允许过期IP</string>
+    <string name="enable_local_cache">开启持久化缓存IP</string>
+    <string name="enable_https">开启HTTPS</string>
+    <string name="enable_downgrade">允许降级</string>
+    <string name="enable_network_changed_pre_resolve">网络切换自动刷新</string>
+    <string name="enable_httpdns_log">允许SDK打印日志</string>
+    <string name="timeout">超时时间</string>
+
+    <string name="china">中国</string>
+    <string name="china_hk">中国香港</string>
+    <string name="singapore">新加坡</string>
+
+    <string name="select_region">选择Region</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="timeout_hint">请输入超时时间，毫秒为单位</string>
+    <string name="set_timeout">设置超时</string>
+    <string name="timeout_empty">超时时间为空</string>
+
+    <string name="ip_probe_list">探测IP列表</string>
+    <string name="ttl_cache_list">自定义TTL缓存列表</string>
+    <string name="host_fixed_ip_list">主站域名列表</string>
+
+    <string name="httpdns_sdk_version">HttpDNS版本号</string>
+    <string name="unknown">未知</string>
+    <string name="ip_stack">当前所连接网络的网络栈类型</string>
+    <string name="clear_host_cache">清空指定域名缓存</string>
+    <string name="clear_cache_hint">请输入要清空缓存的域名</string>
+    <string name="network_request_type">网络请求类型</string>
+    <string name="async_resolve">异步解析获取IP</string>
+    <string name="ip_type">要解析的IP类型</string>
+
+    <string name="select_resolve_ip_type">选择IP类型</string>
+    <string name="auto_get_ip_type">自动判断IP类型</string>
+    <string name="add_pre_resolve">添加预解析域名</string>
+    <string name="add_pre_resolve_hint">请输入要预解析的域名</string>
+    <string name="pre_resolve_list">预解析域名列表</string>
+    <string name="pre_resolve_host_duplicate">%s域名已经被添加至预解析列表，请勿重复添加</string>
+
+    <string name="host">域名：</string>
+    <string name="port">端口：</string>
+    <string name="ttl">TTL时长: </string>
+
+    <string name="add_host_fixed_ip_hint">请输入主站域名</string>
+    <string name="add_host_fixed_ip">添加主站域名</string>
+    <string name="host_fixed_ip_empty">主站域名为空</string>
+    <string name="host_fixed_ip_duplicate">%s主站域名已经被添加，请勿重复添加</string>
+
+    <string name="add_ip_probe_host_hint">请输入探测IP的域名</string>
+    <string name="add_ip_probe_port_hint">请输入探测IP的端口</string>
+    <string name="add_ip_probe">添加IP探测</string>
+    <string name="port_is_empty">端口号为空</string>
+    <string name="ip_probe_item_duplicate">%s:%s已经被添加至IP探测列表，请勿重复添加</string>
+
+    <string name="host_is_empty">域名为空</string>
+    <string name="pre_resolve_host_is_empty">预解析的域名为空</string>
+
+    <string name="add_ttl_host_hint">请输入缓存的域名</string>
+    <string name="add_ttl_ttl_hint">请输入缓存的ttl时间，单位：秒</string>
+    <string name="add_custom_ttl">添加自定义TTL</string>
+    <string name="ttl_is_empty">TTL时间为空</string>
+    <string name="ttl_is_not_number">请输入正确格式的TTL时长</string>
+
+    <string name="delete">删除</string>
+    <string name="clear_all_cache">清除所有HttpDNS配置缓存</string>
+    <string name="all_cache_cleared">所有HttpDNS配置缓存都已清除</string>
+
+    <string name="input_the_resolve_host">要解析的域名</string>
+    <string name="input_the_resolve_host_help_text">例如：help.aliyun.com</string>
+    <string name="input_the_request_api">要请求的接口</string>
+    <string name="input_the_request_api_help_text">例如: /document_detail/434554.html</string>
+
+    <string name="resolve_and_request">解析并请求</string>
+    <string name="resolve_host_empty">域名不能为空</string>
+    <string name="host_is_ip">域名不能是IP地址</string>
+    <string name="host_illegal">请输入正确格式的域名</string>
+    <string name="schema_type">Schema类型</string>
+    <string name="httpdns_webview_best_practice">HttpDNS WebView 拦截GET请求</string>
+    <string name="httpdns_webview_post_best_practice">HttpDNS WebView POST请求通过Native发送</string>
+    <string name="httpdns_sni">HttpDNS IP直连方案</string>
+
+    <string name="ok">好的</string>
+    <string name="response_title">请求结果</string>
+    <string name="body_large_see_log">Body请通过日志查看，关键字为httpdns</string>
+    <string name="sni_request">IP直连方案</string>
+
+    <string name="tips">提示</string>
+    <string name="network_not_connect">网络未连接，请检查网络</string>
+    <string name="request_exception">请求异常: %s</string>
+</resources>

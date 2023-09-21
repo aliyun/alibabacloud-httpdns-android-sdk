@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SwipeLayout">
+        <attr name="menuView" format="reference" />
+        <attr name="contentView" format="reference" />
+        <attr name="fraction" format="float" />
+    </declare-styleable>
+</resources>

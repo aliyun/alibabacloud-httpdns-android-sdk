@@ -1,0 +1,83 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
+    defaultConfig {
+        applicationId "com.aliyun.ams.httpdns.demo"
+        minSdkVersion 14
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        forTest {
+            // 注意这里的配置，并不是需要编译forTest的app，而是避免httpdns-sdk在AndroidStudio改为end2end运行测试时 BuildVariants报错
+            initWith release
+            debuggable true
+        }
+    }
+
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        def type = variant.buildType.name
+        // To check for a certain build type, use variant.buildType.name == "<buildType>"
+        if ((names.contains("normal") && type.contains("forTest"))
+                || (names.contains("intl") && type.contains("forTest"))
+                || (names.contains("end2end") && type.contains("release"))
+                || (names.contains("end2end") && type.contains("debug"))
+        ) {
+            // Gradle ignores any variants that satisfy the conditions above.
+            setIgnore(true)
+        }
+    }
+
+    testOptions {
+        unitTests {
+            all {
+                jvmArgs '-noverify'
+                systemProperty 'robolectric.logging.enable', true
+            }
+        }
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        normal {
+
+        }
+
+        intl {
+
+        }
+
+        end2end {
+            // 注意这里的配置，并不是需要编译end2end的app，而是避免httpdns-sdk在AndroidStudio改为end2end运行测试时 BuildVariants报错
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+
+    implementation project(':httpdns-sdk')
+
+    implementation("com.squareup.okhttp3:okhttp:3.9.0")
+}

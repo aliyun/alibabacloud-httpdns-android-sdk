@@ -1,0 +1,151 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+apply from: 'version.gradle'
+
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 30
+        versionCode 1
+        versionName httpdnsDebugVersion
+        setProperty("archivesBaseName", "alicloud-android-httpdns-$versionName")
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "VERSION_NAME", "\"${httpdnsDebugVersion}\""
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), 'proguard-rules.pro'
+        }
+
+        forTest {
+            initWith release
+            debuggable true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules-for-test.pro'
+        }
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        normal {
+
+            buildConfigField "String", "DEFAULT_REGION", REGION
+            buildConfigField "String[]", "INIT_SERVER", INIT_SERVERS
+            buildConfigField "String[]", "IPV6_INIT_SERVER", IPV6_INIT_SERVERS
+
+            buildConfigField "String[]", "UPDATE_SERVER", "{}"
+            buildConfigField "String[]", "IPV6_UPDATE_SERVER", "{}"
+        }
+
+        intl {
+            buildConfigField "String", "DEFAULT_REGION", INTL_REGION
+            buildConfigField "String[]", "INIT_SERVER", INTL_INIT_SERVERS
+            buildConfigField "String[]", "IPV6_INIT_SERVER", INTL_IPV6_INIT_SERVERS
+
+            buildConfigField "String[]", "UPDATE_SERVER", INTL_UPDATE_SERVERS
+            buildConfigField "String[]", "IPV6_UPDATE_SERVER", INTL_IPV6_UPDATE_SERVERS
+        }
+
+        end2end {
+            buildConfigField "String", "DEFAULT_REGION", "\"\""
+            buildConfigField "String[]", "INIT_SERVER", "{}"
+            buildConfigField "String[]", "IPV6_INIT_SERVER", "{}"
+
+            buildConfigField "String[]", "UPDATE_SERVER", "{}"
+            buildConfigField "String[]", "IPV6_UPDATE_SERVER", "{}"
+        }
+    }
+
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        def type = variant.buildType.name
+        // To check for a certain build type, use variant.buildType.name == "<buildType>"
+        if ((names.contains("normal") && type.contains("forTest"))
+                || (names.contains("intl") && type.contains("forTest"))
+                || (names.contains("end2end") && type.contains("release"))
+                || (names.contains("end2end") && type.contains("debug"))
+        ) {
+            // Gradle ignores any variants that satisfy the conditions above.
+            setIgnore(true)
+        }
+    }
+
+    testOptions {
+        unitTests {
+            all {
+                jvmArgs '-noverify'
+                systemProperty 'robolectric.logging.enable', true
+            }
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+
+    //noinspection GradleDependency 高版本 jdk和androidx有一些依赖，暂时不升级
+    testEnd2endImplementation "org.robolectric:robolectric:3.8"
+    //noinspection GradleDependency
+    testEnd2endImplementation 'junit:junit:4.12'
+    //noinspection GradleDependency
+    testEnd2endImplementation 'org.mockito:mockito-core:2.15.0'
+    testEnd2endImplementation 'com.squareup.okhttp3:mockwebserver:3.9.0'
+
+    implementation "com.aliyun.ams:alicloud-android-logger:${loggerVersion}"
+    implementation "com.aliyun.ams:alicloud-android-crashdefend:${crashDefendVersion}"
+    implementation "com.aliyun.ams:alicloud-android-ipdetector:${ipdetectorVersion}"
+
+
+    normalImplementation "com.aliyun.ams:alicloud-android-utdid:${utdidVersion}"
+    normalImplementation "com.aliyun.ams:alicloud-android-sender:${senderVersion}"
+    normalImplementation "com.aliyun.ams:alicloud-android-beacon:${beaconVersion}"
+}
+
+ext.getIntlVersion = { version ->
+    if (version.endsWith("-SNAPSHOT")) {
+        return version.replace("-SNAPSHOT", "-intl-SNAPSHOT");
+    } else {
+        return version + "-intl";
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            mavenReleaseAar(MavenPublication) {
+                from components.normalRelease
+                groupId 'com.aliyun.ams'
+                artifactId 'alicloud-android-httpdns'
+                version "$project.android.defaultConfig.versionName"
+            }
+            mavenIntlReleaseAar(MavenPublication) {
+                from components.intlRelease
+                groupId 'com.aliyun.ams'
+                artifactId 'alicloud-android-httpdns'
+                version getIntlVersion(project.android.defaultConfig.versionName)
+            }
+        }
+        repositories {
+            if (project.android.defaultConfig.versionName.endsWith("-local-SNAPSHOT")) {
+                // only maven local
+            } else if (project.android.defaultConfig.versionName.endsWith("-SNAPSHOT")) {
+                // upload to snapshot maven
+            }
+        }
+    }
+}

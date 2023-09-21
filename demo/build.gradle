@@ -1,0 +1,121 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+}
+
+gradle.ext {
+    httpVersion = '2.3.1'
+}
+
+android {
+    namespace 'com.aliyun.ams.httpdns.demo'
+    compileSdkVersion 33
+
+    defaultConfig {
+        applicationId "com.aliyun.ams.httpdns.demo"
+        minSdkVersion 26
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "HTTPDNS_VERSION", "\"${gradle.httpVersion}\""
+        buildConfigField "String", "ACCOUNT_ID", "\"请替换为测试用B实例的accountId\""
+        buildConfigField "String", "SECRET_KEY", "\"请替换为测试用A实例的secret\""
+    }
+
+    buildTypes {
+
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        forTest {
+            // 注意这里的配置，并不是需要编译forTest的app，而是避免httpdns-sdk在AndroidStudio改为end2end运行测试时 BuildVariants报错
+            initWith release
+            debuggable true
+        }
+    }
+
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        def type = variant.buildType.name
+        // To check for a certain build type, use variant.buildType.name == "<buildType>"
+        if ((names.contains("normal") && type.contains("forTest"))
+                || (names.contains("intl") && type.contains("forTest"))
+                || (names.contains("end2end") && type.contains("release"))
+                || (names.contains("end2end") && type.contains("debug"))
+        ) {
+            // Gradle ignores any variants that satisfy the conditions above.
+            setIgnore(true)
+        }
+    }
+
+    testOptions {
+        unitTests {
+            all {
+                jvmArgs '-noverify'
+                systemProperty 'robolectric.logging.enable', true
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        normal {
+
+        }
+
+        intl {
+
+        }
+
+        end2end {
+            // 注意这里的配置，并不是需要编译end2end的app，而是避免httpdns-sdk在AndroidStudio改为end2end运行测试时 BuildVariants报错
+        }
+    }
+
+}
+
+dependencies {
+
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
+
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation project(path: ':httpdns-sdk')
+    implementation("com.aliyun.ams:alicloud-android-tool:1.0.2")
+
+
+    implementation('com.alibaba:fastjson:1.1.73.android@jar')
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}

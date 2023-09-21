@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_basic">
+
+    <fragment
+        android:id="@+id/navigation_basic"
+        android:name="com.alibaba.ams.emas.demo.ui.basic.BasicSettingFragment"
+        android:label="@string/title_basic"
+        tools:layout="@layout/fragment_basic_setting" />
+
+    <fragment
+        android:id="@+id/navigation_resolve"
+        android:name="com.alibaba.ams.emas.demo.ui.resolve.ResolveFragment"
+        android:label="@string/title_resolve"
+        tools:layout="@layout/fragment_resolve" />
+
+    <fragment
+        android:id="@+id/navigation_best_practice"
+        android:name="com.alibaba.ams.emas.demo.ui.practice.BestPracticeFragment"
+        android:label="@string/title_best_practice"
+        tools:layout="@layout/fragment_best_practice" />
+
+    <fragment
+        android:id="@+id/navigation_information"
+        android:name="com.alibaba.ams.emas.demo.ui.info.InfoFragment"
+        android:label="@string/title_info"
+        tools:layout="@layout/fragment_info" />
+</navigation>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.aliyun.ams.httpdns.demo.BuildConfig" />
+
+        <variable
+            name="viewModel"
+            type="com.alibaba.ams.emas.demo.ui.basic.BasicSettingViewModel" />
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.info.InfoFragment">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/basic_scroll_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:scrollbarStyle="insideOverlay"
+                android:scrollbars="vertical"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_percent="@dimen/content_max_width_percent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_expired_ip"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableExpiredIP}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableExpiredIp}"
+                        android:text="@string/enable_expired_ip"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_cache_ip"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableCacheIP}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableCacheIp}"
+                        android:text="@string/enable_local_cache"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_https"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableHttps}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableHttps}"
+                        android:text="@string/enable_https"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_downgrade"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableDegrade}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableDegrade}"
+                        android:text="@string/enable_downgrade"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_network_change_pre"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableAutoRefresh}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableAutoRefresh}"
+                        android:text="@string/enable_network_changed_pre_resolve"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_log"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableLog}"
+                        android:onCheckedChanged="@{viewModel::toggleEnableLog}"
+                        android:text="@string/enable_httpdns_log"
+                        android:textSize="16dp" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?selectableItemBackground"
+                        android:onClick="@{() -> viewModel.setRegion()}"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="Region"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/info_region"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.currentRegion)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="12345" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?selectableItemBackground"
+                        android:onClick="@{() -> viewModel.setTimeout()}"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="@string/timeout"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/info_timeout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.currentTimeout)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="12345" />
+                    </RelativeLayout>
+
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
+                        android:onClick="@{() -> viewModel.showClearCacheDialog()}"
+                        android:padding="18dp"
+                        android:text="@string/clear_host_cache"
+                        android:textColor="@color/black"
+                        android:background="?selectableItemBackground"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
+                        android:onClick="@{() -> viewModel.showAddPreResolveDialog()}"
+                        android:padding="18dp"
+                        android:text="@string/add_pre_resolve"
+                        android:textColor="@color/black"
+                        android:background="?selectableItemBackground"
+                        android:textSize="16dp" />
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

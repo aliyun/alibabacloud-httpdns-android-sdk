@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="viewModel"
+            type="com.alibaba.ams.emas.demo.ui.practice.BestPracticeViewModel" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/open_httpdns_webview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?selectableItemBackground"
+            android:drawableEnd="@drawable/ic_arrow_right"
+            android:padding="18dp"
+            android:text="@string/httpdns_webview_best_practice"
+            android:textColor="@color/black"
+            android:textSize="16dp" />
+
+        <!--    <TextView-->
+        <!--        android:id="@+id/open_httpdns_webview_post"-->
+        <!--        android:layout_width="match_parent"-->
+        <!--        android:layout_height="wrap_content"-->
+        <!--        android:background="?selectableItemBackground"-->
+        <!--        android:drawableEnd="@drawable/ic_arrow_right"-->
+        <!--        android:padding="18dp"-->
+        <!--        android:text="@string/httpdns_webview_post_best_practice"-->
+        <!--        android:textColor="@color/black"-->
+        <!--        android:textSize="16dp" />-->
+
+
+        <TextView
+            android:id="@+id/open_httpdns_sni"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?selectableItemBackground"
+            android:drawableEnd="@drawable/ic_arrow_right"
+            android:padding="18dp"
+            android:text="@string/httpdns_sni"
+            android:textColor="@color/black"
+            android:textSize="16dp"
+            android:onClick="@{() -> viewModel.sniRequest()}"
+            />
+    </LinearLayout>
+
+</layout>

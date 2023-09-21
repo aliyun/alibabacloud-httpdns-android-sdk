@@ -1,0 +1,100 @@
+<resources>
+    <string name="app_name">Alibaba Cloud HttpDNS Demo</string>
+    <string name="title_basic">Basic Settings</string>
+    <string name="title_resolve">HttpDNS Resolve</string>
+    <string name="title_best_practice">Best Practice</string>
+    <string name="title_info">Information</string>
+
+    <string name="enable_expired_ip">Enable Expired IP</string>
+    <string name="enable_local_cache">Enable Cache IP</string>
+    <string name="enable_https">Enable HTTPS</string>
+    <string name="enable_downgrade">Enable Degrade</string>
+    <string name="enable_network_changed_pre_resolve">Enable Automatic Refresh</string>
+    <string name="enable_httpdns_log">Enable Log</string>
+    <string name="timeout">Timeout</string>
+
+    <string name="china">China</string>
+    <string name="china_hk">China-HongKong</string>
+    <string name="singapore">Singapore</string>
+
+    <string name="select_region">Choose Region</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="timeout_hint">Please input timeout, ms unit</string>
+    <string name="set_timeout">Set Timeout</string>
+    <string name="timeout_empty">Timeout is empty</string>
+    <string name="ip_probe_list">Probe IP List</string>
+    <string name="ttl_cache_list">TTL Cache List</string>
+    <string name="host_fixed_ip_list">Host with fixed IP List</string>
+
+    <string name="httpdns_sdk_version">HttpDNS Version</string>
+    <string name="unknown">Unknown</string>
+    <string name="ip_stack">IP stack type of current network</string>
+    <string name="clear_host_cache">Clear the cached DNS record</string>
+    <string name="clear_cache_hint">Please input the domain name which you want to clear the cache</string>
+    <string name="network_request_type">Network request type</string>
+    <string name="async_resolve">Asynchronously resolve host</string>
+    <string name="ip_type">Resolve IP Type</string>
+
+    <string name="select_resolve_ip_type">Select IP Type</string>
+    <string name="auto_get_ip_type">Get IP automatically</string>
+    <string name="add_pre_resolve">Add Pre-Resolve Domain</string>
+    <string name="add_pre_resolve_hint">Please input the domain you want to pre-resolve</string>
+    <string name="pre_resolve_list">Pre-Resolve Domain List</string>
+    <string name="pre_resolve_host_duplicate">The host %s is already added to pre-resolve List</string>
+
+    <string name="host">Host: </string>
+    <string name="port">Port: </string>
+    <string name="ttl">Ttl: </string>
+
+    <string name="add_host_fixed_ip_hint">Please input the host with fixed IP</string>
+    <string name="add_host_fixed_ip">Add Host with fixed IP</string>
+    <string name="host_fixed_ip_empty">Host with fixed IP is empty</string>
+    <string name="host_fixed_ip_duplicate">The host %s is already added to fixed IP List</string>
+
+    <string name="add_ip_probe_host_hint">Please input the host of IP Probe</string>
+    <string name="add_ip_probe_port_hint">Please input the port of IP Probe</string>
+    <string name="add_ip_probe">Add IP probe</string>
+    <string name="port_is_empty">Port is empty</string>
+    <string name="ip_probe_item_duplicate">The ip probe item - %s:%s is already added</string>
+
+    <string name="host_is_empty">Host is empty</string>
+    <string name="pre_resolve_host_is_empty">Pre-Resolve Host is empty</string>
+
+    <string name="add_ttl_host_hint">Please input the host of custom TTL</string>
+    <string name="add_ttl_ttl_hint">Please input the ttl, unit is second</string>
+    <string name="add_custom_ttl">Add custom ttl</string>
+    <string name="ttl_is_empty">TTL is empty</string>
+    <string name="ttl_is_not_number">Please input correct ttl value</string>
+
+    <string name="delete">Delete</string>
+    <string name="clear_all_cache">Clear all HttpDNS config cache</string>
+    <string name="all_cache_cleared">All HttpDNDS config cache have been cleared</string>
+
+    <string name="input_the_resolve_host">The Host will be resolved</string>
+    <string name="input_the_resolve_host_help_text">eg: help.aliyun.com</string>
+    <string name="input_the_request_api">The API to be requested</string>
+    <string name="input_the_request_api_help_text">eg: /document_detail/434554.html</string>
+
+    <string name="resolve_and_request">Resolve and request</string>
+    <string name="resolve_host_empty">The host can not be empty</string>
+    <string name="host_is_ip">The input host can not be an IP</string>
+    <string name="host_illegal">The input a valid host</string>
+    <string name="schema_type">Schema Type</string>
+    <string name="httpdns_webview_best_practice">HttpDNS WebView intercept GET request</string>
+    <string name="httpdns_webview_post_best_practice">HttpDNS WebView POST request forward to native</string>
+    <string name="httpdns_sni">HttpDNS Request By IP Address</string>
+
+    <string name="ok">OK</string>
+    <string name="response_title">Response</string>
+    <string name="body_large_see_log">Check the logs to get the response body with the keyword httpdns</string>
+
+    <string name="sni_request">Request By IP Address</string>
+
+    <string name="tips">Tips</string>
+    <string name="network_not_connect">Network has issues, please check the network</string>
+
+    <string name="request_exception">Request exception: %s</string>
+
+
+</resources>

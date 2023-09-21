@@ -1,0 +1,21 @@
+.DS_Store
+*.swp
+
+
+# Gradle
+build
+.gradle/
+target/
+
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# sonar
+.sonar/
+
+# Android
+local.properties
+nohup.out

@@ -1,0 +1,10 @@
+ext {
+    httpdnsDebugVersion = '2.3.1'
+
+    loggerVersion = '1.2.0'
+    senderVersion = '1.1.6'
+    crashDefendVersion = '0.0.6'
+    utdidVersion = '2.6.0'
+    beaconVersion = '1.0.8'
+    ipdetectorVersion = '1.0.0'
+}
