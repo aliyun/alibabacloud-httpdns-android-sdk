@@ -29,8 +29,8 @@ public class HttpDnsServer {
     private RequestHandler requestHandler = new RequestHandler();
 
     private HashMap<Integer, BaseDataServer> servers = new HashMap<>();
-    private InterpretHostServer interpretHostServer;
     private ResolveHostServer resolveHostServer;
+    private BatchResolveHostServer batchResolveHostServer;
     private ServerIpsServer serverIpsServer;
     private DebugApiServer debugApiServer;
 
@@ -45,14 +45,14 @@ public class HttpDnsServer {
     }
 
     public void start(boolean v6) {
-        interpretHostServer = new InterpretHostServer(secretServce);
         resolveHostServer = new ResolveHostServer(secretServce);
+        batchResolveHostServer = new BatchResolveHostServer(secretServce);
         serverIpsServer = new ServerIpsServer();
         debugApiServer = new DebugApiServer();
-        servers.put(REQUEST_TYPE_INTERPRET_HOST, interpretHostServer);
+        servers.put(REQUEST_TYPE_INTERPRET_HOST, resolveHostServer);
         servers.put(REQUEST_TYPE_UPDATE_SERVER_IPS, serverIpsServer);
         servers.put(REQUEST_TYPE_DEBUG_REQUEST, debugApiServer);
-        servers.put(REQUEST_TYPE_RESOLVE_REQUEST, resolveHostServer);
+        servers.put(REQUEST_TYPE_RESOLVE_REQUEST, batchResolveHostServer);
         try {
             mockWebServer.start(getAddress(v6), 0);
             mockWebServer.setDispatcher(requestHandler);
@@ -122,8 +122,8 @@ public class HttpDnsServer {
         this.requestHandler.listenRequest(requestListener);
     }
 
-    public InterpretHostServer getInterpretHostServer() {
-        return interpretHostServer;
+    public ResolveHostServer getResolveHostServer() {
+        return resolveHostServer;
     }
 
     public ServerIpsServer getServerIpsServer() {
@@ -134,8 +134,8 @@ public class HttpDnsServer {
         return debugApiServer;
     }
 
-    public ResolveHostServer getResolveHostServer() {
-        return resolveHostServer;
+    public BatchResolveHostServer getBatchResolveHostServer() {
+        return batchResolveHostServer;
     }
 
     public String createSecretFor(String account) {

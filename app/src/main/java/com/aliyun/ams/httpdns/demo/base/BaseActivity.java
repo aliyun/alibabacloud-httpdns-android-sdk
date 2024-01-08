@@ -20,10 +20,6 @@ import android.widget.TextView;
 import com.aliyun.ams.httpdns.demo.MyApp;
 import com.aliyun.ams.httpdns.demo.R;
 
-/**
- * @author zonglin.nzl
- * @date 8/30/22
- */
 public class BaseActivity extends Activity {
 
     public static final int MSG_WHAT_LOG = 10000;

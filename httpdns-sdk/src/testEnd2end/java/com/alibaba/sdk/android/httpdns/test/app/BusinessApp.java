@@ -20,7 +20,7 @@ import com.alibaba.sdk.android.httpdns.NetType;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.test.helper.ServerStatusHelper;
 import com.alibaba.sdk.android.httpdns.test.server.HttpDnsServer;
 import com.alibaba.sdk.android.httpdns.test.server.MockSpeedTestServer;
@@ -225,7 +225,7 @@ public class BusinessApp {
      *
      * @return
      */
-    public String[] requestInterpretHost() {
+    public String[] requestResolveHost() {
         return httpDnsService.getIpsByHostAsync(businessHost);
     }
 
@@ -234,7 +234,7 @@ public class BusinessApp {
      *
      * @return
      */
-    public String[] requestInterpretHostForIpv6() {
+    public String[] requestResolveHostForIpv6() {
         return httpDnsService.getIPv6sByHostAsync(businessHost);
     }
 
@@ -244,7 +244,7 @@ public class BusinessApp {
      * @param host
      * @return
      */
-    public String[] requestInterpretHost(String host) {
+    public String[] requestResolveHost(String host) {
         return httpDnsService.getIpsByHostAsync(host);
     }
 
@@ -254,7 +254,7 @@ public class BusinessApp {
      * @param requestHost
      * @return
      */
-    public String[] requestInterpretHostForIpv6(String requestHost) {
+    public String[] requestResolveHostForIpv6(String requestHost) {
         return httpDnsService.getIPv6sByHostAsync(requestHost);
     }
 
@@ -265,7 +265,7 @@ public class BusinessApp {
      * @param type
      * @return
      */
-    public HTTPDNSResult requestInterpretHost(String host, RequestIpType type) {
+    public HTTPDNSResult requestResolveHost(String host, RequestIpType type) {
         return httpDnsService.getIpsByHostAsync(host, type, null, null);
     }
 
@@ -339,10 +339,10 @@ public class BusinessApp {
     /**
      * 设置ip probe
      */
-    public void enableIpProbe() {
-        ArrayList<IPProbeItem> list = new ArrayList<>();
-        list.add(new IPProbeItem(businessHost, 6666));
-        httpDnsService.setIPProbeList(list);
+    public void enableIPRanking() {
+        ArrayList<IPRankingBean> list = new ArrayList<>();
+        list.add(new IPRankingBean(businessHost, 6666));
+        httpDnsService.setIPRankingList(list);
     }
 
     /**
@@ -392,7 +392,7 @@ public class BusinessApp {
         assertThat("一个accountId对应一个实例", httpDnsService == HttpDns.getService(RuntimeEnvironment.application, accountId));
     }
 
-    public HTTPDNSResult requestSDNSInterpretHost(HashMap<String, String> extras, String cacheKey) {
+    public HTTPDNSResult requestSDNSResolveHost(HashMap<String, String> extras, String cacheKey) {
         return httpDnsService.getIpsByHostAsync(businessHost, extras, cacheKey);
     }
 
@@ -404,11 +404,11 @@ public class BusinessApp {
         httpDnsService.clearSdnsGlobalParams();
     }
 
-    public HTTPDNSResult requestSDNSInterpretHostForIpv6(HashMap<String, String> extras, String cacheKey) {
+    public HTTPDNSResult requestSDNSResolveHostForIpv6(HashMap<String, String> extras, String cacheKey) {
         return httpDnsService.getIpsByHostAsync(businessHost, RequestIpType.v6, extras, cacheKey);
     }
 
-    public void preInterpreHost(ArrayList<String> hostList, RequestIpType type) {
+    public void preResolveHost(ArrayList<String> hostList, RequestIpType type) {
         httpDnsService.setPreResolveHosts(hostList, type);
     }
 
@@ -464,14 +464,14 @@ public class BusinessApp {
         httpDnsService.setHTTPSRequestEnabled(enableHttps);
     }
 
-    public String[] requestInterpretHostSync(String host) {
+    public String[] requestResolveHostSync(String host) {
         if (httpDnsService instanceof SyncService) {
             return ((SyncService) httpDnsService).getByHost(host, RequestIpType.v4).getIps();
         }
         return new String[0];
     }
 
-    public HTTPDNSResult requestInterpretHostSync(String host, RequestIpType type) {
+    public HTTPDNSResult requestResolveHostSync(String host, RequestIpType type) {
         if (httpDnsService instanceof SyncService) {
             return ((SyncService) httpDnsService).getByHost(host, type);
         }

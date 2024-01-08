@@ -9,10 +9,6 @@ import com.alibaba.sdk.android.httpdns.ILogger;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.aliyun.ams.httpdns.demo.utils.SpUtil;
 
-/**
- * @author zonglin.nzl
- * @date 8/30/22
- */
 public class MyApp extends Application {
 
     private static final String SP_NAME = "HTTPDNS_DEMO";
@@ -27,8 +23,8 @@ public class MyApp extends Application {
         return instance;
     }
 
-    private HttpDnsHolder holderA = new HttpDnsHolder("请替换为测试用A实例的accountId", "请替换为测试用A实例的secret");
-    private HttpDnsHolder holderB = new HttpDnsHolder("请替换为测试用B实例的accountId");
+    private final HttpDnsHolder holderA = new HttpDnsHolder("139450", "807a19762f8eaefa8563489baf198535");
+    private final HttpDnsHolder holderB = new HttpDnsHolder("199019");
 
     private HttpDnsHolder current = holderA;
 

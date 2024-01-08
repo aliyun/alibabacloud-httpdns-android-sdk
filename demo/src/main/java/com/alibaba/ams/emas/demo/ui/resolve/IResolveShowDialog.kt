@@ -1,5 +1,9 @@
 package com.alibaba.ams.emas.demo.ui.resolve
 
+/**
+ * @author allen.wy
+ * @date 2023/5/26
+ */
 interface IResolveShowDialog {
     fun showSelectResolveIpTypeDialog()
 

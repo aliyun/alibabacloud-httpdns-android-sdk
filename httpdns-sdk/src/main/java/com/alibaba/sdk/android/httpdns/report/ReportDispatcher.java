@@ -1,6 +1,5 @@
 package com.alibaba.sdk.android.httpdns.report;
 
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -43,4 +42,5 @@ final class ReportDispatcher {
 			}
 		}
 	}
+
 }

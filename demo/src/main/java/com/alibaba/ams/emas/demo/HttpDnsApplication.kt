@@ -3,14 +3,20 @@ package com.alibaba.ams.emas.demo
 import android.app.Application
 import android.text.TextUtils
 import com.alibaba.ams.emas.demo.constant.*
+import com.alibaba.ams.emas.demo.ui.practice.WVPostPlugin
 import com.alibaba.sdk.android.httpdns.InitConfig
 import com.alibaba.sdk.android.httpdns.RequestIpType
 import com.aliyun.ams.httpdns.demo.BuildConfig
+import com.emas.hybrid.api.EmasHybridApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * @author allen.wy
+ * @date 2023/5/24
+ */
 class HttpDnsApplication : Application() {
 
     override fun onCreate() {
@@ -28,7 +34,7 @@ class HttpDnsApplication : Application() {
                     val ttlCacheStr = preferences.getString(KEY_TTL_CHANGER, null)
                     TtlCacheHolder.convertTtlCacheData(ttlCacheStr)
                     //IP探测
-                    val ipProbeItemJson = preferences.getString(KEY_IP_PROBE_ITEMS, null)
+                    val ipRankingItemJson = preferences.getString(KEY_IP_RANKING_ITEMS, null)
                     //主站域名
                     val hostListWithFixedIpJson =
                         preferences.getString(KEY_HOST_WITH_FIXED_IP, null)
@@ -41,7 +47,7 @@ class HttpDnsApplication : Application() {
                         .setEnableExpiredIp(enableExpiredIp)
                         .setRegion(if (region.equals("cn")) null else region)
                         .setTimeout(timeout)
-                        .setIpProbeItems(ipProbeItemJson.toIPProbeList())
+                        .setIPRankingList(ipRankingItemJson.toIPRankingList())
                         .configCacheTtlChanger(TtlCacheHolder.cacheTtlChanger)
                         .configHostWithFixedIp(hostListWithFixedIpJson.toHostList())
                         .buildFor(BuildConfig.ACCOUNT_ID)
@@ -53,5 +59,10 @@ class HttpDnsApplication : Application() {
                 }
             }
         }
+
+        EmasHybridApi.registerPlugin("WVPost", WVPostPlugin::class.java)
+
     }
+
+
 }

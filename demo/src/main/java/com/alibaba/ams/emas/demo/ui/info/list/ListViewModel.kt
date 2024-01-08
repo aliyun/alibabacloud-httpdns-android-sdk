@@ -2,7 +2,6 @@ package com.alibaba.ams.emas.demo.ui.info.list
 
 import android.app.Application
 import android.content.SharedPreferences
-import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
@@ -10,14 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.alibaba.ams.emas.demo.*
 import com.alibaba.ams.emas.demo.TtlCacheHolder.toJsonString
 import com.alibaba.ams.emas.demo.constant.KEY_HOST_WITH_FIXED_IP
-import com.alibaba.ams.emas.demo.constant.KEY_IP_PROBE_ITEMS
+import com.alibaba.ams.emas.demo.constant.KEY_IP_RANKING_ITEMS
 import com.alibaba.ams.emas.demo.constant.KEY_PRE_RESOLVE_HOST_LIST
 import com.alibaba.ams.emas.demo.constant.KEY_TTL_CHANGER
-import com.alibaba.sdk.android.httpdns.HttpDns
 import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.alibaba.sdk.android.httpdns.RequestIpType
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem
-import com.aliyun.ams.httpdns.demo.BuildConfig
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean
 import com.aliyun.ams.httpdns.demo.R
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -25,10 +22,14 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.ArrayList
 
+/**
+ * @author allen.wy
+ * @date 2023/6/6
+ */
 class ListViewModel(application: Application) : AndroidViewModel(application) {
 
     private var hostFixedIpList: MutableList<String> = mutableListOf()
-    private var ipProbeList: MutableList<IPProbeItem> = mutableListOf()
+    private var ipRankingList: MutableList<IPRankingBean> = mutableListOf()
     private var preResolveHostList: MutableList<String> = mutableListOf()
 
     private var dnsService: HttpDnsService? = null
@@ -71,16 +72,16 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 else -> {
-                    val ipProbeListStr = preferences.getString(KEY_IP_PROBE_ITEMS, null)
-                    val probeList = ipProbeListStr.toIPProbeList()
-                    probeList?.let {
-                        ipProbeList.addAll(probeList)
-                        for (probeItem in ipProbeList) {
+                    val ipRankingListStr = preferences.getString(KEY_IP_RANKING_ITEMS, null)
+                    val rankingList = ipRankingListStr.toIPRankingList()
+                    rankingList?.let {
+                        ipRankingList.addAll(rankingList)
+                        for (rankingItem in ipRankingList) {
                             infoList.add(
                                 ListItem(
-                                    kListItemTypeIPProbe,
-                                    probeItem.hostName,
-                                    probeItem.port
+                                    kListItemTypeIPRanking,
+                                    rankingItem.hostName,
+                                    rankingItem.port
                                 )
                             )
                         }
@@ -124,31 +125,32 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toSaveIPProbe(host: String, port: Int, listAdapter: ListAdapter) {
-        val ipProbeItem = IPProbeItem(host, port)
-        if (ipProbeList.contains(ipProbeItem)) {
+        val ipProbeItem =
+            IPRankingBean(host, port)
+        if (ipRankingList.contains(ipProbeItem)) {
             Toast.makeText(
                 getApplication(),
                 getString(R.string.ip_probe_item_duplicate, host, port.toString()),
                 Toast.LENGTH_SHORT
             ).show()
         } else {
-            ipProbeList.add(ipProbeItem)
+            ipRankingList.add(ipProbeItem)
             saveIPProbe()
             listAdapter.addItemData(
                 ListItem(
-                    kListItemTypeIPProbe,
+                    kListItemTypeIPRanking,
                     host,
                     port
                 )
             )
-            dnsService?.setIPProbeList(ipProbeList)
+            dnsService?.setIPProbeList(ipRankingList)
         }
     }
 
     private fun saveIPProbe() {
         viewModelScope.launch {
             val jsonObject = JSONObject()
-            for (item in ipProbeList) {
+            for (item in ipRankingList) {
                 try {
                     jsonObject.put(item.hostName, item.port)
                 } catch (e: JSONException) {
@@ -157,7 +159,7 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             }
             val ipProbeStr =  jsonObject.toString()
             val editor = preferences.edit()
-            editor.putString(KEY_IP_PROBE_ITEMS, ipProbeStr)
+            editor.putString(KEY_IP_RANKING_ITEMS, ipProbeStr)
             editor.apply()
         }
     }
@@ -218,9 +220,9 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onIPProbeItemDeleted(position: Int) {
-        ipProbeList.removeAt(position)
+        ipRankingList.removeAt(position)
         saveIPProbe()
-        dnsService?.setIPProbeList(ipProbeList)
+        dnsService?.setIPProbeList(ipRankingList)
     }
 
     fun onTtlDeleted(host: String) {

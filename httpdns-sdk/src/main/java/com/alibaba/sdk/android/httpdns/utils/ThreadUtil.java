@@ -22,7 +22,7 @@ public class ThreadUtil {
 
 	public static ExecutorService createSingleThreadService(final String tag) {
 		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(0, 1, 30, TimeUnit.SECONDS,
-			new LinkedBlockingQueue<Runnable>(4), new ThreadFactory() {
+			new LinkedBlockingQueue<>(4), new ThreadFactory() {
 			@Override
 			public Thread newThread(Runnable r) {
 				Thread thread = new Thread(r, tag + index++);
@@ -36,8 +36,8 @@ public class ThreadUtil {
 
 	public static ExecutorService createExecutorService() {
 		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(0, 10, 30,
-            TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(), new ThreadFactory() {
+			TimeUnit.SECONDS,
+			new SynchronousQueue<>(), new ThreadFactory() {
 			@Override
 			public Thread newThread(Runnable r) {
 				Thread thread = new Thread(r, "httpdns" + index++);
@@ -51,7 +51,7 @@ public class ThreadUtil {
 
 	public static ExecutorService createDBExecutorService() {
 		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(0, 1, 30, TimeUnit.SECONDS,
-			new LinkedBlockingQueue<Runnable>(4), new ThreadFactory() {
+			new LinkedBlockingQueue<>(4), new ThreadFactory() {
 			@Override
 			public Thread newThread(Runnable r) {
 				Thread thread = new Thread(r, "httpdns_db" + index++);
@@ -172,7 +172,7 @@ public class ThreadUtil {
 
 		@Override
 		public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout,
-                               TimeUnit unit)
+							   TimeUnit unit)
 			throws ExecutionException, InterruptedException, TimeoutException {
 			try {
 				return mHttpDnsThread.invokeAny(tasks, timeout, unit);

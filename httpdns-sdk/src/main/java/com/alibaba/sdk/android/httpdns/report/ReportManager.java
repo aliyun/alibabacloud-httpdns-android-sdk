@@ -71,7 +71,7 @@ public class ReportManager {
 	 * @param isIpv6  是否ipv6，0为否，1位是
 	 */
 	public void reportErrorHttpDnsRequest(String srvAddr, String errCode, String errMsg,
-										  int isIpv6,
+                                          int isIpv6,
 										  int isIpv6_srv) {
 	}
 

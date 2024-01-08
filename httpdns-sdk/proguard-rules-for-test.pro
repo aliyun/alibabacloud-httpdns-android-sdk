@@ -21,7 +21,7 @@
 -dontskipnonpubliclibraryclasses
 -verbose
 -overloadaggressively
--allowaccessmodification
+#-allowaccessmodification
 -useuniqueclassmembernames
 
 -keeppackagenames com.alibaba.sdk.android.httpdns
@@ -31,7 +31,7 @@
 -keep class com.alibaba.sdk.android.httpdns.RequestIpType{*;}
 -keep class com.alibaba.sdk.android.httpdns.net64.Net64Service{*;}
 -keep class com.alibaba.sdk.android.httpdns.DegradationFilter{*;}
--keep class com.alibaba.sdk.android.httpdns.probe.IPProbeItem{*;}
+-keep class com.alibaba.sdk.android.httpdns.ranking.IPRankingBean{*;}
 -keep class com.alibaba.sdk.android.httpdns.ILogger{*;}
 -keepclasseswithmembers class com.alibaba.sdk.android.httpdns.log.HttpDnsLog {
     public static *** setLogger(***);
@@ -41,7 +41,11 @@
 -keep class com.alibaba.sdk.android.httpdns.HTTPDNSResult{*;}
 -keep class com.alibaba.sdk.android.httpdns.ApiForTest{*;}
 -keep class com.alibaba.sdk.android.httpdns.test.** {*;}
--keep class com.alibaba.sdk.android.httpdns.interpret.InterpretHostResponse{*;}
--keep class com.alibaba.sdk.android.httpdns.interpret.ResolveHostResponse{*;}
+-keep class com.alibaba.sdk.android.httpdns.resolve.ResolveHostResponse{*;}
+-keep class com.alibaba.sdk.android.httpdns.resolve.BatchResolveHostResponse{*;}
 
 
+-keep class com.alibaba.sdk.android.httpdns.utils.CommonUtil{
+    public <methods>;
+    public <fields>;
+}

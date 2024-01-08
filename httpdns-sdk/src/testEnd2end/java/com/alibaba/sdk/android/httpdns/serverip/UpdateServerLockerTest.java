@@ -21,7 +21,7 @@ public class UpdateServerLockerTest {
 
     @Test
     public void onlyOneRequest() {
-        UpdateServerLocker locker = new UpdateServerLocker();
+        UpdateRegionServerLocker locker = new UpdateRegionServerLocker();
 
         String region = Constants.REGION_MAINLAND;
         MatcherAssert.assertThat("允许第一个请求", locker.begin(region));
@@ -36,7 +36,7 @@ public class UpdateServerLockerTest {
     public void requestDifferentRegion() {
         String region = Constants.REGION_MAINLAND;
         String region1 = Constants.REGION_HK;
-        UpdateServerLocker locker = new UpdateServerLocker();
+        UpdateRegionServerLocker locker = new UpdateRegionServerLocker();
 
         MatcherAssert.assertThat("允许第一个请求", locker.begin(region));
         MatcherAssert.assertThat("允许第一个请求", locker.begin(region1));
@@ -50,7 +50,7 @@ public class UpdateServerLockerTest {
 
     @Test
     public void timeout() throws InterruptedException {
-        UpdateServerLocker locker = new UpdateServerLocker(10);
+        UpdateRegionServerLocker locker = new UpdateRegionServerLocker(10);
         String region = Constants.REGION_MAINLAND;
         MatcherAssert.assertThat("允许第一个请求", locker.begin(region));
         MatcherAssert.assertThat("第一个请求,未完成，其它请求不处理", !locker.begin(region));
@@ -67,7 +67,7 @@ public class UpdateServerLockerTest {
         final String region1 = Constants.REGION_HK;
         final AtomicInteger regionRequesting = new AtomicInteger(0);
         final AtomicInteger region1Requesting = new AtomicInteger(0);
-        final UpdateServerLocker locker = new UpdateServerLocker();
+        final UpdateRegionServerLocker locker = new UpdateRegionServerLocker();
 
         MultiThreadTestHelper.start(new MultiThreadTestHelper.SimpleTask(5, 1000, new Runnable() {
             @Override

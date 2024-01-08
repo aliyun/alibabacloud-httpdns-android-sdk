@@ -62,7 +62,7 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
      * 当前超时
      */
     var currentTimeout = SingleLiveData<String>().apply {
-        value = "1500ms"
+        value = "2000ms"
     }
 
     var showDialog: IBasicShowDialog? = null
@@ -79,7 +79,7 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
             "hk" -> currentRegion.value = getString(R.string.china_hk)
             "sg" -> currentRegion.value = getString(R.string.singapore)
         }
-        currentTimeout.value = "${preferences.getInt(KEY_TIMEOUT, 1500)}ms"
+        currentTimeout.value = "${preferences.getInt(KEY_TIMEOUT, 2000)}ms"
         dnsService = HttpDnsServiceHolder.getHttpDnsService(getApplication())
     }
 

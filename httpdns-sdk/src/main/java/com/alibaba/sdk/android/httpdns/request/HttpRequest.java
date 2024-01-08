@@ -18,12 +18,12 @@ import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
  */
 public class HttpRequest<T> {
 	private HttpRequestConfig requestConfig;
-	private ResponseTranslator<T> translator;
+	private ResponseParser<T> translator;
 
 	protected HttpRequest() {
 	}
 
-	public HttpRequest(HttpRequestConfig requestConfig, ResponseTranslator<T> translator) {
+	public HttpRequest(HttpRequestConfig requestConfig, ResponseParser<T> translator) {
 		this.requestConfig = requestConfig;
 		this.translator = translator;
 	}
@@ -82,7 +82,7 @@ public class HttpRequest<T> {
 				if (HttpDnsLog.isPrint()) {
 					HttpDnsLog.d("request success " + responseStr);
 				}
-				return translator.translate(responseStr);
+				return translator.parse(responseStr);
 			}
 		} catch (Throwable e) {
 			long cost = System.currentTimeMillis() - start;

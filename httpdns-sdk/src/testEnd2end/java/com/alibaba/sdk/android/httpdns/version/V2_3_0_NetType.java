@@ -12,7 +12,7 @@ import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.test.app.BusinessApp;
 import com.alibaba.sdk.android.httpdns.test.helper.ServerStatusHelper;
 import com.alibaba.sdk.android.httpdns.test.server.HttpDnsServer;
-import com.alibaba.sdk.android.httpdns.test.server.InterpretHostServer;
+import com.alibaba.sdk.android.httpdns.test.server.ResolveHostServer;
 import com.alibaba.sdk.android.httpdns.test.server.MockSpeedTestServer;
 import com.alibaba.sdk.android.httpdns.test.server.ServerIpsServer;
 import com.alibaba.sdk.android.httpdns.test.utils.RandomValue;
@@ -142,9 +142,9 @@ public class V2_3_0_NetType {
         ServerStatusHelper.hasReceiveRegionChange("v4网络下使用内置v4节点更新服务", app, serverV4One, REGION_DEFAULT, true);
 
         // 随便发起一个请求
-        app.requestInterpretHost();
+        app.requestResolveHost();
         // 确认服务节点是否更新成功
-        ServerStatusHelper.hasReceiveAppInterpretHostRequest("更新后，使用新服务节点解析", app, serverV4Two, 1);
+        ServerStatusHelper.hasReceiveAppResolveHostRequest("更新后，使用新服务节点解析", app, serverV4Two, 1);
     }
 
     /**
@@ -160,9 +160,9 @@ public class V2_3_0_NetType {
         ServerStatusHelper.hasReceiveRegionChange("v6网络下使用内置v6节点更新服务", app, serverV6One, REGION_DEFAULT, true);
 
         // 随便发起一个请求
-        app.requestInterpretHost();
+        app.requestResolveHost();
         // 确认服务节点是否更新成功
-        ServerStatusHelper.hasReceiveAppInterpretHostRequest("更新后，使用新服务节点解析", app, serverV6Two, 1);
+        ServerStatusHelper.hasReceiveAppResolveHostRequest("更新后，使用新服务节点解析", app, serverV6Two, 1);
     }
 
     /**
@@ -178,9 +178,9 @@ public class V2_3_0_NetType {
         ServerStatusHelper.hasReceiveRegionChange("都支持的网络下使用内置v4节点更新服务", app, serverV4One, REGION_DEFAULT, true);
 
         // 随便发起一个请求
-        app.requestInterpretHost();
+        app.requestResolveHost();
         // 确认服务节点是否更新成功
-        ServerStatusHelper.hasReceiveAppInterpretHostRequest("更新后，使用新服务节点解析", app, serverV4Two, 1);
+        ServerStatusHelper.hasReceiveAppResolveHostRequest("更新后，使用新服务节点解析", app, serverV4Two, 1);
     }
 
     /**
@@ -193,31 +193,31 @@ public class V2_3_0_NetType {
         testUpdateServerWhenStartUnderV6();
 
         String host = RandomValue.randomHost();
-        serverV6Two.getInterpretHostServer().preSetRequestResponse(host, 403, "whatever", -1);
+        serverV6Two.getResolveHostServer().preSetRequestResponse(host, 403, "whatever", -1);
         // 发起一次请求，使切换服务节点
-        app.requestInterpretHost(host);
+        app.requestResolveHost(host);
         app.waitForAppThread();
 
-        assertThat("第一次失败后，切换服务IP重试", serverV6Three.getInterpretHostServer().hasRequestForArg(host, 1, true));
+        assertThat("第一次失败后，切换服务IP重试", serverV6Three.getResolveHostServer().hasRequestForArg(host, 1, true));
 
         // 重置
         HttpDns.resetInstance();
         serverV6One.getServerIpsServer().cleanRecord();
-        serverV6One.getInterpretHostServer().cleanRecord();
+        serverV6One.getResolveHostServer().cleanRecord();
         serverV6Two.getServerIpsServer().cleanRecord();
-        serverV6Two.getInterpretHostServer().cleanRecord();
+        serverV6Two.getResolveHostServer().cleanRecord();
         serverV6Three.getServerIpsServer().cleanRecord();
-        serverV6Three.getInterpretHostServer().cleanRecord();
+        serverV6Three.getResolveHostServer().cleanRecord();
 
         // 模拟第二次启动
         app.changeNetType(NetType.v6);
         app.start(false);
 
         String anotherHost = RandomValue.randomHost();
-        app.requestInterpretHost(anotherHost);
+        app.requestResolveHost(anotherHost);
         app.waitForAppThread();
 
-        assertThat("启动时，从缓存中读取服务节点使用", serverV6Three.getInterpretHostServer().hasRequestForArg(anotherHost, 1, true));
+        assertThat("启动时，从缓存中读取服务节点使用", serverV6Three.getResolveHostServer().hasRequestForArg(anotherHost, 1, true));
     }
 
 
@@ -236,10 +236,10 @@ public class V2_3_0_NetType {
         app.changeToNetwork(ConnectivityManager.TYPE_WIFI);
 
         String host1 = RandomValue.randomHost();
-        app.requestInterpretHost(host1);
+        app.requestResolveHost(host1);
         app.waitForAppThread();
 
-        assertThat("网络环境变为v4后使用v4的服务节点", serverV4Two.getInterpretHostServer().hasRequestForArg(host1, 1, true));
+        assertThat("网络环境变为v4后使用v4的服务节点", serverV4Two.getResolveHostServer().hasRequestForArg(host1, 1, true));
 
 
         // 网络变化到v6 mobile
@@ -247,20 +247,20 @@ public class V2_3_0_NetType {
         app.changeToNetwork(ConnectivityManager.TYPE_MOBILE);
 
         String host2 = RandomValue.randomHost();
-        app.requestInterpretHost(host2);
+        app.requestResolveHost(host2);
         app.waitForAppThread();
 
-        assertThat("网络环境变为v6后使用v6的服务节点", serverV6Three.getInterpretHostServer().hasRequestForArg(host2, 1, true));
+        assertThat("网络环境变为v6后使用v6的服务节点", serverV6Three.getResolveHostServer().hasRequestForArg(host2, 1, true));
 
         // 网络变化到都支持 wifi
         app.changeNetType(NetType.both);
         app.changeToNetwork(ConnectivityManager.TYPE_WIFI);
 
         String host3 = RandomValue.randomHost();
-        app.requestInterpretHost(host3);
+        app.requestResolveHost(host3);
         app.waitForAppThread();
 
-        assertThat("网络环境变为both后使用v4的服务节点", serverV4Two.getInterpretHostServer().hasRequestForArg(host3, 1, true));
+        assertThat("网络环境变为both后使用v4的服务节点", serverV4Two.getResolveHostServer().hasRequestForArg(host3, 1, true));
     }
 
 
@@ -269,38 +269,38 @@ public class V2_3_0_NetType {
 
         // 复用case 获取v4网络状态
         testUpdateServerWhenStart();
-        serverV4Two.getInterpretHostServer().cleanRecord();
+        serverV4Two.getResolveHostServer().cleanRecord();
 
         String host = RandomValue.randomHost();
-        app.requestInterpretHost(host, RequestIpType.auto);
+        app.requestResolveHost(host, RequestIpType.auto);
         app.waitForAppThread();
 
-        assertThat("当前网络仅支持v4时，自动解析只会解析v4类型", serverV4Two.getInterpretHostServer().hasRequestForArg(host, 1, true));
+        assertThat("当前网络仅支持v4时，自动解析只会解析v4类型", serverV4Two.getResolveHostServer().hasRequestForArg(host, 1, true));
     }
 
     @Test
     public void testAutoRequestIpTypeForIpv6() {
         // 复用case 获取v6网络状态
         testUpdateServerWhenStartUnderV6();
-        serverV6Two.getInterpretHostServer().cleanRecord();
+        serverV6Two.getResolveHostServer().cleanRecord();
 
         String host = RandomValue.randomHost();
-        app.requestInterpretHost(host, RequestIpType.auto);
+        app.requestResolveHost(host, RequestIpType.auto);
         app.waitForAppThread();
 
-        assertThat("当前网络仅支持v6时，自动解析只会解析v6类型", serverV6Two.getInterpretHostServer().hasRequestForArg(InterpretHostServer.InterpretHostArg.create(host, RequestIpType.v6), 1, true));
+        assertThat("当前网络仅支持v6时，自动解析只会解析v6类型", serverV6Two.getResolveHostServer().hasRequestForArg(ResolveHostServer.ResolveHostArg.create(host, RequestIpType.v6), 1, true));
     }
 
     @Test
     public void testAutoRequestIpTypeForBoth() {
         // 复用case 获取v4v6网络状态
         testUpdateServerWhenStartUnderV4V6();
-        serverV4Two.getInterpretHostServer().cleanRecord();
+        serverV4Two.getResolveHostServer().cleanRecord();
 
         String host = RandomValue.randomHost();
-        app.requestInterpretHost(host, RequestIpType.auto);
+        app.requestResolveHost(host, RequestIpType.auto);
         app.waitForAppThread();
 
-        assertThat("当前网络支持v4v6时，自动解析会解析v4v6类型", serverV4Two.getInterpretHostServer().hasRequestForArg(InterpretHostServer.InterpretHostArg.create(host, RequestIpType.both), 1, true));
+        assertThat("当前网络支持v4v6时，自动解析会解析v4v6类型", serverV4Two.getResolveHostServer().hasRequestForArg(ResolveHostServer.ResolveHostArg.create(host, RequestIpType.both), 1, true));
     }
 }

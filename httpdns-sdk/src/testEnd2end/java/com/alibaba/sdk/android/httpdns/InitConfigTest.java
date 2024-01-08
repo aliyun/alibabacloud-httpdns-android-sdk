@@ -1,6 +1,6 @@
 package com.alibaba.sdk.android.httpdns;
 
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.test.utils.RandomValue;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
@@ -15,10 +15,6 @@ import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 
-/**
- * @author zonglin.nzl
- * @date 1/14/22
- */
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class InitConfigTest {
@@ -47,7 +43,7 @@ public class InitConfigTest {
         MatcherAssert.assertThat("默认不开启https", config.isEnableHttps(), Matchers.is(false));
         MatcherAssert.assertThat("默认region正确", config.getRegion(), Matchers.is(InitConfig.NOT_SET));
         MatcherAssert.assertThat("默认超时时间是15s", config.getTimeout(), Matchers.is(15 * 1000));
-        MatcherAssert.assertThat("默认不测速", config.getIpProbeItems(), Matchers.nullValue());
+        MatcherAssert.assertThat("默认不测速", config.getIPRankingList(), Matchers.nullValue());
         MatcherAssert.assertThat("默认不修改缓存ttl配置", config.getCacheTtlChanger(), Matchers.nullValue());
     }
 
@@ -61,7 +57,7 @@ public class InitConfigTest {
                 .setEnableHttps(true)
                 .setRegion(Constants.REGION_HK)
                 .setTimeout(5 * 1000)
-                .setIpProbeItems(Arrays.asList(new IPProbeItem("aa", 43)))
+                .setIPRankingList(Arrays.asList(new IPRankingBean("aa", 43)))
                 .configCacheTtlChanger(ttlChanger)
                 .buildFor(accountId);
         InitConfig config = InitConfig.getInitConfig(accountId);
@@ -71,8 +67,8 @@ public class InitConfigTest {
         MatcherAssert.assertThat("开启https", config.isEnableHttps(), Matchers.is(true));
         MatcherAssert.assertThat("region是HK", config.getRegion(), Matchers.is(Constants.REGION_HK));
         MatcherAssert.assertThat("超时时间是5s", config.getTimeout(), Matchers.is(5 * 1000));
-        MatcherAssert.assertThat("测速", config.getIpProbeItems().get(0).getHostName(), Matchers.is(Matchers.equalTo("aa")));
-        MatcherAssert.assertThat("测速", config.getIpProbeItems().get(0).getPort(), Matchers.is(43));
+        MatcherAssert.assertThat("测速", config.getIPRankingList().get(0).getHostName(), Matchers.is(Matchers.equalTo("aa")));
+        MatcherAssert.assertThat("测速", config.getIPRankingList().get(0).getPort(), Matchers.is(43));
         MatcherAssert.assertThat("配置的有ttlChanger", config.getCacheTtlChanger(), Matchers.is(ttlChanger));
     }
 }

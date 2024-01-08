@@ -163,7 +163,7 @@
                     </RelativeLayout>
 
                     <RelativeLayout
-                        android:id="@+id/jump_to_ip_probe"
+                        android:id="@+id/jump_to_ip_ranking"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"

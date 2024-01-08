@@ -47,9 +47,9 @@ class InfoFragment : Fragment() {
             startActivity(intent)
         }
 
-        binding.jumpToIpProbe.setOnClickListener {
+        binding.jumpToIpRanking.setOnClickListener {
             val intent = Intent(activity, ListActivity::class.java)
-            intent.putExtra("list_type", kListItemTypeIPProbe)
+            intent.putExtra("list_type", kListItemTypeIPRanking)
             startActivity(intent)
         }
 

@@ -28,14 +28,11 @@ import okhttp3.Response;
 
 /**
  * okhttp实现网络请求
- *
- * @author zonglin.nzl
- * @date 8/31/22
  */
 public class OkHttpRequest implements NetworkRequest {
 
     public static final String TAG = MyApp.TAG + "Okhttp";
-    private OkHttpClient client;
+    private final OkHttpClient client;
 
     private boolean async;
     private RequestIpType type;
@@ -48,14 +45,16 @@ public class OkHttpRequest implements NetworkRequest {
                     @Override
                     public List<InetAddress> lookup(String hostname) throws UnknownHostException {
                         HTTPDNSResult result;
+                        /* 切换为新版标准api */
                         if (async) {
-                            result = MyApp.getInstance().getService().getIpsByHostAsync(hostname, type);
+                            result = MyApp.getInstance().getService().getHttpDnsResultForHostAsync(hostname, type);
                         } else {
-                            result = ((SyncService) MyApp.getInstance().getService()).getByHost(hostname, type);
+                            result = MyApp.getInstance().getService().getHttpDnsResultForHostSync(hostname, type);
                         }
                         Log.d(TAG, "httpdns 解析 " + hostname + " 结果为 " + result + " ttl is " + Util.getTtl(result));
                         List<InetAddress> inetAddresses = new ArrayList<>();
                         // 这里需要根据实际情况选择使用ipv6地址 还是 ipv4地址， 下面示例的代码优先使用了ipv6地址
+                        Log.d(TAG, "netType is: " + HttpDnsNetworkDetector.getInstance().getNetType(context));
                         if (result.getIpv6s() != null && result.getIpv6s().length > 0 && HttpDnsNetworkDetector.getInstance().getNetType(context) != NetType.v4) {
                             for (int i = 0; i < result.getIpv6s().length; i++) {
                                 inetAddresses.addAll(Arrays.asList(InetAddress.getAllByName(result.getIpv6s()[i])));

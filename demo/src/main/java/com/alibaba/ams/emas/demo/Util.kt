@@ -2,7 +2,7 @@ package com.alibaba.ams.emas.demo
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean
 import com.aliyun.ams.httpdns.demo.BuildConfig
 import org.json.JSONArray
 import org.json.JSONException
@@ -10,6 +10,10 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.IOException
 
+/**
+ * @author allen.wy
+ * @date 2023/6/5
+ */
 fun String?.toHostList(): MutableList<String>? {
     if (this == null) {
         return null
@@ -27,17 +31,22 @@ fun String?.toHostList(): MutableList<String>? {
     return null
 }
 
-fun String?.toIPProbeList(): MutableList<IPProbeItem>? {
+fun String?.toIPRankingList(): MutableList<IPRankingBean>? {
     if (this == null) {
         return null
     }
     try {
         val jsonObject = JSONObject(this)
-        val list = mutableListOf<IPProbeItem>()
+        val list = mutableListOf<IPRankingBean>()
         val it = jsonObject.keys()
         while (it.hasNext()) {
             val host = it.next()
-            list.add(IPProbeItem(host, jsonObject.getInt(host)))
+            list.add(
+                IPRankingBean(
+                    host,
+                    jsonObject.getInt(host)
+                )
+            )
         }
         return list
     } catch (e: JSONException) {

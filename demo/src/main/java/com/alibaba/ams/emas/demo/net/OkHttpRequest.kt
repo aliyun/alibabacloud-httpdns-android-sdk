@@ -15,6 +15,10 @@ import okhttp3.OkHttpClient
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
+/**
+ * @author allen.wy
+ * @date 2023/5/25
+ */
 class OkHttpRequest  constructor(
     private val context: Context,
     private val requestIpType: RequestIpType,
@@ -23,7 +27,7 @@ class OkHttpRequest  constructor(
 
     override fun get(url: String): Response {
         val request = okhttp3.Request.Builder().url(url).build()
-        OkHttpClientSingleton.getInstance(context, requestIpType, async).getOkHttpClient().newCall(request).execute()
+        OkHttpClientSingleton.getInstance(context).updateConfig(requestIpType, async).getOkHttpClient().newCall(request).execute()
             .use { response -> return Response(response.code, response.body?.string()) }
     }
 

@@ -19,37 +19,37 @@ import static org.hamcrest.Matchers.arrayContaining;
 @RunWith(RobolectricTestRunner.class)
 public class UpdateServerResponseTest {
 
-    @Test
-    public void createFromJson() throws JSONException {
-        String[] ips = RandomValue.randomIpv4s();
-        String[] ipv6s = RandomValue.randomIpv6s();
-        int[] ports = RandomValue.randomPorts();
+	@Test
+	public void createFromJson() throws JSONException {
+		String[] ips = RandomValue.randomIpv4s();
+		String[] ipv6s = RandomValue.randomIpv6s();
+		int[] ports = RandomValue.randomPorts();
 
-        UpdateServerResponse response = UpdateServerResponse.fromResponse(ServerIpsServer.createUpdateServerResponse(ips, ipv6s, ports, ports));
+		UpdateRegionServerResponse response = UpdateRegionServerResponse.fromResponse(
+			ServerIpsServer.createUpdateServerResponse(ips, ipv6s, ports, ports));
 
-        assertThat(response.getServerIps(), arrayContaining(ips));
-        assertThat(response.getServerIpv6s(), arrayContaining(ipv6s));
-        UnitTestUtil.assertIntArrayEquals(response.getServerPorts(), ports);
-        UnitTestUtil.assertIntArrayEquals(response.getServerIpv6Ports(), ports);
+		assertThat(response.getServerIps(), arrayContaining(ips));
+		assertThat(response.getServerIpv6s(), arrayContaining(ipv6s));
+		UnitTestUtil.assertIntArrayEquals(response.getServerPorts(), ports);
+		UnitTestUtil.assertIntArrayEquals(response.getServerIpv6Ports(), ports);
 
+		response = UpdateRegionServerResponse.fromResponse(
+			ServerIpsServer.createUpdateServerResponse(ips, ipv6s, null, null));
 
-        response = UpdateServerResponse.fromResponse(ServerIpsServer.createUpdateServerResponse(ips, ipv6s, null, null));
+		assertThat(response.getServerIps(), arrayContaining(ips));
+		assertThat(response.getServerIpv6s(), arrayContaining(ipv6s));
+		UnitTestUtil.assertIntArrayEquals(response.getServerPorts(), null);
+		UnitTestUtil.assertIntArrayEquals(response.getServerIpv6Ports(), null);
+	}
 
-        assertThat(response.getServerIps(), arrayContaining(ips));
-        assertThat(response.getServerIpv6s(), arrayContaining(ipv6s));
-        UnitTestUtil.assertIntArrayEquals(response.getServerPorts(), null);
-        UnitTestUtil.assertIntArrayEquals(response.getServerIpv6Ports(), null);
-    }
-
-
-    @Test
-    public void invalidJsonStrWillThrowException() {
-        String invalidJson = "{";
-        try {
-            UpdateServerResponse ignored = UpdateServerResponse.fromResponse(invalidJson);
-            assertThat("should throw exception", false);
-        } catch (Throwable throwable) {
-            // ignored
-        }
-    }
+	@Test
+	public void invalidJsonStrWillThrowException() {
+		String invalidJson = "{";
+		try {
+			UpdateRegionServerResponse ignored = UpdateRegionServerResponse.fromResponse(invalidJson);
+			assertThat("should throw exception", false);
+		} catch (Throwable throwable) {
+			// ignored
+		}
+	}
 }

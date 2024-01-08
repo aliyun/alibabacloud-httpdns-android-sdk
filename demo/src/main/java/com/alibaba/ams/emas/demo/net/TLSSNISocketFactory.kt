@@ -6,6 +6,10 @@ import java.net.InetAddress
 import java.net.Socket
 import javax.net.ssl.*
 
+/**
+ * @author allen.wy
+ * @date 2023/5/26
+ */
 class TLSSNISocketFactory(connection: HttpsURLConnection): SSLSocketFactory() {
 
     private var mConnection: HttpsURLConnection

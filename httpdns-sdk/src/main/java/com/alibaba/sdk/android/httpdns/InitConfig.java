@@ -3,7 +3,7 @@ package com.alibaba.sdk.android.httpdns;
 import java.util.HashMap;
 import java.util.List;
 
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 /**
@@ -37,7 +37,7 @@ public class InitConfig {
 	private final boolean mEnableCacheIp;
 	private final int mTimeout;
 	private final boolean mEnableHttps;
-	private final List<IPProbeItem> mIpProbeItems;
+	private final List<IPRankingBean> mIPRankingList;
 	private final String mRegion;
 	private final CacheTtlChanger mCacheTtlChanger;
 	private final List<String> mHostListWithFixedIp;
@@ -47,7 +47,7 @@ public class InitConfig {
 		mEnableCacheIp = builder.enableCacheIp;
 		mTimeout = builder.timeout;
 		mEnableHttps = builder.enableHttps;
-		mIpProbeItems = builder.ipProbeItems;
+		mIPRankingList = builder.ipRankingList;
 		mRegion = builder.region;
 		mCacheTtlChanger = builder.cacheTtlChanger;
 		mHostListWithFixedIp = builder.hostListWithFixedIp;
@@ -69,8 +69,8 @@ public class InitConfig {
 		return mEnableHttps;
 	}
 
-	public List<IPProbeItem> getIpProbeItems() {
-		return mIpProbeItems;
+	public List<IPRankingBean> getIPRankingList() {
+		return mIPRankingList;
 	}
 
 	public String getRegion() {
@@ -90,7 +90,7 @@ public class InitConfig {
 		private boolean enableCacheIp = Constants.DEFAULT_ENABLE_CACHE_IP;
 		private int timeout = Constants.DEFAULT_TIMEOUT;
 		private boolean enableHttps = Constants.DEFAULT_ENABLE_HTTPS;
-		private List<IPProbeItem> ipProbeItems = null;
+		private List<IPRankingBean> ipRankingList = null;
 		private String region = NOT_SET;
 		private CacheTtlChanger cacheTtlChanger = null;
 		private List<String> hostListWithFixedIp = null;
@@ -115,8 +115,8 @@ public class InitConfig {
 			return this;
 		}
 
-		public Builder setIpProbeItems(List<IPProbeItem> ipProbeItems) {
-			this.ipProbeItems = ipProbeItems;
+		public Builder setIPRankingList(List<IPRankingBean> ipRankingList) {
+			this.ipRankingList = ipRankingList;
 			return this;
 		}
 

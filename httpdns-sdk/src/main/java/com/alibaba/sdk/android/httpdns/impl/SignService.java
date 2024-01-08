@@ -1,6 +1,5 @@
 package com.alibaba.sdk.android.httpdns.impl;
 
-
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 

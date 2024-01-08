@@ -21,12 +21,13 @@
 -dontskipnonpubliclibraryclasses
 -verbose
 -overloadaggressively
--allowaccessmodification
+#-allowaccessmodification
 -useuniqueclassmembernames
 
 -dontwarn com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector
 
 -keeppackagenames com.alibaba.sdk.android.httpdns
+-flattenpackagehierarchy com.alibaba.sdk.android.httpdns
 -keep class com.alibaba.sdk.android.httpdns.HttpDns{*;}
 -keep class com.alibaba.sdk.android.httpdns.HttpDnsService{*;}
 -keep class com.alibaba.sdk.android.httpdns.SyncService{*;}
@@ -35,7 +36,7 @@
 -keep class com.alibaba.sdk.android.httpdns.RequestIpType{*;}
 -keep class com.alibaba.sdk.android.httpdns.net64.Net64Service{*;}
 -keep class com.alibaba.sdk.android.httpdns.DegradationFilter{*;}
--keep class com.alibaba.sdk.android.httpdns.probe.IPProbeItem{*;}
+-keep class com.alibaba.sdk.android.httpdns.ranking.IPRankingBean{*;}
 -keep class com.alibaba.sdk.android.httpdns.ILogger{*;}
 -keep class com.alibaba.sdk.android.httpdns.CacheTtlChanger{*;}
 -keep class com.alibaba.sdk.android.httpdns.NetType{*;}
@@ -54,3 +55,7 @@
 
 -keep interface com.alibaba.sdk.android.httpdns.HttpDnsSettings$NetworkChecker{*;}
 -keep interface com.alibaba.sdk.android.httpdns.HttpDnsSettings$NetworkDetector{*;}
+-keep class com.alibaba.sdk.android.httpdns.utils.CommonUtil{
+    public <methods>;
+    public <fields>;
+}

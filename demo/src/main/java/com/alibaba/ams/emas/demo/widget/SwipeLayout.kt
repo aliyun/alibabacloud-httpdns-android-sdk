@@ -13,6 +13,10 @@ import com.aliyun.ams.httpdns.demo.R
 import java.lang.ref.WeakReference
 import kotlin.math.abs
 
+/**
+ * @author allen.wy
+ * @date 2023/6/5
+ */
 class SwipeLayout(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
     ViewGroup(context, attrs, defStyleAttr) {
     private val mMatchParentChildren = mutableListOf<View>()

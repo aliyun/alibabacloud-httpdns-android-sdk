@@ -21,7 +21,7 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
 
     private val infoList: MutableList<ListItem> = mutableListOf()
     private lateinit var listAdapter: ListAdapter
-    private var listType: Int = kListItemTypeIPProbe
+    private var listType: Int = kListItemTypeIPRanking
 
     private lateinit var viewModel: ListViewModel
 
@@ -30,7 +30,7 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
 
         var title = ""
         intent?.let {
-            listType = intent.getIntExtra("list_type", kListItemTypeIPProbe)
+            listType = intent.getIntExtra("list_type", kListItemTypeIPRanking)
             title = when (listType) {
                 kListItemTypeCacheTtl -> getString(R.string.ttl_cache_list)
                 kListItemTypeHostWithFixedIP -> getString(R.string.host_fixed_ip_list)
@@ -173,7 +173,7 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
         viewModel.onHostWithFixedIPDeleted(position)
     }
 
-    override fun onIPProbeItemDeleted(position: Int) {
+    override fun onIPRankingItemDeleted(position: Int) {
         viewModel.onIPProbeItemDeleted(position)
     }
 

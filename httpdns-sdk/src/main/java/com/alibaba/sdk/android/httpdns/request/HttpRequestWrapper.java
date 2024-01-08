@@ -5,19 +5,19 @@ package com.alibaba.sdk.android.httpdns.request;
  */
 public class HttpRequestWrapper<T> extends HttpRequest<T> {
 
-	private final HttpRequest<T> mHttpRequest;
+    private final HttpRequest<T> mHttpRequest;
 
-	public HttpRequestWrapper(HttpRequest<T> request) {
-		this.mHttpRequest = request;
-	}
+    public HttpRequestWrapper(HttpRequest<T> request) {
+        this.mHttpRequest = request;
+    }
 
-	@Override
-	public HttpRequestConfig getRequestConfig() {
-		return mHttpRequest.getRequestConfig();
-	}
+    @Override
+    public HttpRequestConfig getRequestConfig() {
+        return mHttpRequest.getRequestConfig();
+    }
 
-	@Override
-	public T request() throws Throwable {
-		return mHttpRequest.request();
-	}
+    @Override
+    public T request() throws Throwable {
+        return mHttpRequest.request();
+    }
 }

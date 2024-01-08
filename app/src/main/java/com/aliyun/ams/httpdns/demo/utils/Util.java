@@ -4,19 +4,10 @@ import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
 
 import java.lang.reflect.Field;
 
-/**
- * @author zonglin.nzl
- * @date 9/8/22
- */
 public class Util {
-
-
     /**
      * 获取ttl，
      * 此方法是用于测试自定义ttl是否生效
-     *
-     * @param result
-     * @return
      */
     public static int getTtl(HTTPDNSResult result) {
         try {

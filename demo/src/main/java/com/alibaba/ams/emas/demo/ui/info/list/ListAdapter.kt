@@ -1,7 +1,6 @@
 package com.alibaba.ams.emas.demo.ui.info.list
 
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +8,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.aliyun.ams.httpdns.demo.R
 import com.aliyun.ams.httpdns.demo.databinding.InfoListItemBinding;
 
+/**
+ * @author allen.wy
+ * @date 2023/6/5
+ */
 class ListAdapter(private val context: Context,
                   private val itemList: MutableList<ListItem>,
                   private val deleteListener: OnDeleteListener) :
@@ -29,7 +32,7 @@ class ListAdapter(private val context: Context,
                 kListItemTypeHostWithFixedIP -> deleteListener.onHostWithFixedIPDeleted(holder.adapterPosition)
                 kListItemTypeCacheTtl -> deleteListener.onTtlDeleted(itemList[holder.adapterPosition].content)
                 kListItemPreResolve -> deleteListener.onPreResolveDeleted(holder.adapterPosition)
-                else -> deleteListener.onIPProbeItemDeleted(holder.adapterPosition)
+                else -> deleteListener.onIPRankingItemDeleted(holder.adapterPosition)
             }
             itemList.removeAt(holder.adapterPosition)
             notifyItemRemoved(holder.adapterPosition)
@@ -66,7 +69,7 @@ class ListAdapter(private val context: Context,
 
         fun setItemValue(listItem: ListItem, onDeleteListener: View.OnClickListener) {
             when (listItem.type) {
-                kListItemTypeIPProbe -> {
+                kListItemTypeIPRanking -> {
                     binding.hostFixedIpContainer.visibility = View.GONE
                     binding.hostAndPortOrTtlContainer.visibility = View.VISIBLE
                     binding.hostValue.text = listItem.content
@@ -100,7 +103,7 @@ class ListAdapter(private val context: Context,
     interface OnDeleteListener {
         fun onHostWithFixedIPDeleted(position: Int)
 
-        fun onIPProbeItemDeleted(position: Int)
+        fun onIPRankingItemDeleted(position: Int)
 
         fun onTtlDeleted(host: String)
 

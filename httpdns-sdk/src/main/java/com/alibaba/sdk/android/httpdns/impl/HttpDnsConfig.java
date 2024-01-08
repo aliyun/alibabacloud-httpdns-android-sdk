@@ -58,6 +58,7 @@ public class HttpDnsConfig implements SpCacheItem {
 	 * 超时时长
 	 */
 	private int mTimeout = Constants.DEFAULT_TIMEOUT;
+
 	/**
 	 * 是否禁用服务，以避免崩溃
 	 */
@@ -69,7 +70,7 @@ public class HttpDnsConfig implements SpCacheItem {
 	/**
 	 * 是否禁用probe能力
 	 */
-	private boolean mProbeDisabled = false;
+	private boolean mIPRankingDisabled = false;
 
 	/**
 	 * 网络探测接口
@@ -218,7 +219,7 @@ public class HttpDnsConfig implements SpCacheItem {
 			mTimeout == that.mTimeout &&
 			mHitCrashDefend == that.mHitCrashDefend &&
 			mRemoteDisabled == that.mRemoteDisabled &&
-			mProbeDisabled == that.mProbeDisabled &&
+			mIPRankingDisabled == that.mIPRankingDisabled &&
 			CommonUtil.equals(mContext, that.mContext) &&
 			CommonUtil.equals(mInitServer, that.mInitServer) &&
 			CommonUtil.equals(mDefaultUpdateServer, that.mDefaultUpdateServer) &&
@@ -236,7 +237,7 @@ public class HttpDnsConfig implements SpCacheItem {
 		return Arrays.hashCode(
 			new Object[] {mContext, mEnabled, mInitServer, mDefaultUpdateServer, mCurrentServer,
 				mAccountId, mSchema, mRegion, mTimeout, mHitCrashDefend, mRemoteDisabled,
-				mProbeDisabled,
+				mIPRankingDisabled,
 				mCacheHelper, mWorker, mDbWorker});
 	}
 
@@ -245,6 +246,7 @@ public class HttpDnsConfig implements SpCacheItem {
 	 * <p>
 	 * 线上SDK 初始化服务IP是内置写死的。
 	 * 本API主要用于一些测试代码使用
+	 *
 	 */
 	public void setInitServers(String initRegion, String[] initIps, int[] initPorts,
 							   String[] initIpv6s, int[] initV6Ports) {
@@ -287,12 +289,12 @@ public class HttpDnsConfig implements SpCacheItem {
 		this.mRemoteDisabled = disable;
 	}
 
-	public void probeDisable(boolean disable) {
-		this.mProbeDisabled = disable;
+	public void ipRankingDisable(boolean disable) {
+		this.mIPRankingDisabled = disable;
 	}
 
-	public boolean isProbeDisabled() {
-		return mProbeDisabled;
+	public boolean isIPRankingDisabled() {
+		return mIPRankingDisabled;
 	}
 
 	public HttpDnsSettings.NetworkDetector getNetworkDetector() {

@@ -8,7 +8,7 @@ import com.alibaba.sdk.android.httpdns.HttpDns;
 import com.alibaba.sdk.android.httpdns.HttpDnsService;
 import com.alibaba.sdk.android.httpdns.InitConfig;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
-import com.alibaba.sdk.android.httpdns.probe.IPProbeItem;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.aliyun.ams.httpdns.demo.utils.SpUtil;
 
 import org.json.JSONArray;
@@ -23,9 +23,6 @@ import java.util.List;
 /**
  * 保存Httpdns 及 相关配置，
  * 方便修改
- *
- * @author zonglin.nzl
- * @date 8/30/22
  */
 public class HttpDnsHolder {
 
@@ -39,7 +36,7 @@ public class HttpDnsHolder {
     public static final String KEY_CACHE_IP = "enableCacheIp";
     public static final String KEY_TIMEOUT = "timeout";
     public static final String KEY_HTTPS = "enableHttps";
-    public static final String KEY_PROBE_ITEMS = "ipProbeItems";
+    public static final String KEY_IP_RANKING_ITEMS = "ipProbeItems";
     public static final String KEY_REGION = "region";
     public static final String KEY_TTL_CHANGER = "cacheTtlChanger";
     public static final String KEY_HOST_NOT_CHANGE = "hostListWithFixedIp";
@@ -53,11 +50,11 @@ public class HttpDnsHolder {
     private boolean enableCacheIp;
     private int timeout;
     private boolean enableHttps;
-    private ArrayList<IPProbeItem> ipProbeItems = null;
+    private ArrayList<IPRankingBean> ipRankingList = null;
     private String region;
     private ArrayList<String> hostListWithFixedIp;
     private HashMap<String, Integer> ttlCache;
-    private CacheTtlChanger cacheTtlChanger = new CacheTtlChanger() {
+    private final CacheTtlChanger cacheTtlChanger = new CacheTtlChanger() {
         @Override
         public int changeCacheTtl(String host, RequestIpType type, int ttl) {
             if (ttlCache != null && ttlCache.get(host) != null) {
@@ -90,7 +87,7 @@ public class HttpDnsHolder {
                 enableCacheIp = sp.getBoolean(KEY_CACHE_IP, false);
                 timeout = sp.getInt(KEY_TIMEOUT, 5 * 1000);
                 enableHttps = sp.getBoolean(KEY_HTTPS, false);
-                ipProbeItems = convertToProbeList(sp.getString(KEY_PROBE_ITEMS, null));
+                ipRankingList = convertToProbeList(sp.getString(KEY_IP_RANKING_ITEMS, null));
                 region = sp.getString(KEY_REGION, null);
                 ttlCache = convertToCacheTtlData(sp.getString(KEY_TTL_CHANGER, null));
                 hostListWithFixedIp = convertToStringList(sp.getString(KEY_HOST_NOT_CHANGE, null));
@@ -103,7 +100,7 @@ public class HttpDnsHolder {
                 .setEnableCacheIp(enableCacheIp)
                 .setTimeout(timeout)
                 .setEnableHttps(enableHttps)
-                .setIpProbeItems(ipProbeItems)
+                .setIPRankingList(ipRankingList)
                 .setRegion(region)
                 .configCacheTtlChanger(cacheTtlChanger)
                 .configHostWithFixedIp(hostListWithFixedIp)
@@ -196,16 +193,16 @@ public class HttpDnsHolder {
         });
     }
 
-    public void addIpProbeItem(IPProbeItem ipProbeItem) {
-        if (this.ipProbeItems == null) {
-            this.ipProbeItems = new ArrayList<>();
+    public void addIpProbeItem(IPRankingBean ipProbeItem) {
+        if (this.ipRankingList == null) {
+            this.ipRankingList = new ArrayList<>();
         }
-        this.ipProbeItems.add(ipProbeItem);
-        getService().setIPProbeList(ipProbeItems);
+        this.ipRankingList.add(ipProbeItem);
+        getService().setIPProbeList(ipRankingList);
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {
-                editor.putString(KEY_PROBE_ITEMS, convertProbeList(ipProbeItems));
+                editor.putString(KEY_IP_RANKING_ITEMS, convertProbeList(ipRankingList));
             }
         });
     }
@@ -241,7 +238,7 @@ public class HttpDnsHolder {
                 .append("是否开启HTTPS : ").append(enableHttps).append("\n")
                 .append("当前region设置 : ").append(region).append("\n")
                 .append("当前超时设置 : ").append(timeout).append("\n")
-                .append("当前探测配置 : ").append(convertProbeList(ipProbeItems)).append("\n")
+                .append("当前探测配置 : ").append(convertProbeList(ipRankingList)).append("\n")
                 .append("当前缓存配置 : ").append(convertTtlCache(ttlCache)).append("\n")
                 .append("当前主站域名配置 : ").append(convertHostList(hostListWithFixedIp)).append("\n")
         ;
@@ -275,12 +272,12 @@ public class HttpDnsHolder {
         return jsonObject.toString();
     }
 
-    private static String convertProbeList(List<IPProbeItem> ipProbeItems) {
+    private static String convertProbeList(List<IPRankingBean> ipProbeItems) {
         if (ipProbeItems == null) {
             return null;
         }
         JSONObject jsonObject = new JSONObject();
-        for (IPProbeItem item : ipProbeItems) {
+        for (IPRankingBean item : ipProbeItems) {
             try {
                 jsonObject.put(item.getHostName(), item.getPort());
             } catch (JSONException e) {
@@ -290,16 +287,16 @@ public class HttpDnsHolder {
         return jsonObject.toString();
     }
 
-    private static ArrayList<IPProbeItem> convertToProbeList(String json) {
+    private static ArrayList<IPRankingBean> convertToProbeList(String json) {
         if (json == null) {
             return null;
         }
         try {
             JSONObject jsonObject = new JSONObject(json);
-            ArrayList<IPProbeItem> list = new ArrayList<>();
+            ArrayList<IPRankingBean> list = new ArrayList<>();
             for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
                 String host = it.next();
-                list.add(new IPProbeItem(host, jsonObject.getInt(host)));
+                list.add(new IPRankingBean(host, jsonObject.getInt(host)));
             }
             return list;
         } catch (JSONException e) {

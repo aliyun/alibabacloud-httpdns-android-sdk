@@ -13,13 +13,9 @@ import java.util.HashMap;
 
 import static com.aliyun.ams.httpdns.demo.HttpDnsActivity.APPLE_URL;
 
-/**
- * @author zonglin.nzl
- * @date 8/31/22
- */
 public class SDNSActivity extends BaseActivity {
 
-    private HashMap<String, String> globalParams = new HashMap<>();
+    private final HashMap<String, String> globalParams = new HashMap<>();
     /**
      * 要请求的域名
      */

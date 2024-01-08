@@ -35,10 +35,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-/**
- * @author zonglin.nzl
- * @date 8/31/22
- */
 public class WebViewActivity extends Activity {
 
     private WebView webView;
@@ -196,9 +192,6 @@ public class WebViewActivity extends Activity {
 
     /**
      * 是否是二进制资源，二进制资源可以不需要编码信息
-     *
-     * @param mime
-     * @return
      */
     private boolean isBinaryRes(String mime) {
         if (mime.startsWith("image")
@@ -239,7 +232,8 @@ public class WebViewActivity extends Activity {
             conn.setInstanceFollowRedirects(false);
             if (conn instanceof HttpsURLConnection) {
                 final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) conn;
-                WebviewTlsSniSocketFactory sslSocketFactory = new WebviewTlsSniSocketFactory((HttpsURLConnection) conn);
+                WebviewTlsSniSocketFactory sslSocketFactory = new WebviewTlsSniSocketFactory(
+                    (HttpsURLConnection)conn);
 
                 // sni场景，创建SSLScocket
                 httpsURLConnection.setSSLSocketFactory(sslSocketFactory);
@@ -304,8 +298,6 @@ public class WebViewActivity extends Activity {
 
     /**
      * header中是否含有cookie
-     *
-     * @param headers
      */
     private boolean containCookie(Map<String, String> headers) {
         for (Map.Entry<String, String> headerField : headers.entrySet()) {
@@ -317,10 +309,10 @@ public class WebViewActivity extends Activity {
     }
 
 
-    class WebviewTlsSniSocketFactory extends SSLSocketFactory {
+    static class WebviewTlsSniSocketFactory extends SSLSocketFactory {
         private final String TAG = WebviewTlsSniSocketFactory.class.getSimpleName();
         HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
-        private HttpsURLConnection conn;
+        private final HttpsURLConnection conn;
 
         public WebviewTlsSniSocketFactory(HttpsURLConnection conn) {
             this.conn = conn;

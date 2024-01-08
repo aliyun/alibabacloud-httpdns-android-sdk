@@ -56,10 +56,10 @@ public class BeaconControl {
 
 								String probe = jsonObject.optString("ip-ranking", "normal");
 								if (probe.equals("disabled")) {
-									httpDnsConfig.probeDisable(true);
+									httpDnsConfig.ipRankingDisable(true);
 									HttpDnsLog.w("beacon probe disabled");
 								} else {
-									httpDnsConfig.probeDisable(false);
+									httpDnsConfig.ipRankingDisable(false);
 									HttpDnsLog.d("beacon probe normal");
 								}
 
@@ -79,4 +79,5 @@ public class BeaconControl {
 		});
 		beacon.start(context);
 	}
+
 }

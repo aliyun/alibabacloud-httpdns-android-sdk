@@ -95,6 +95,7 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
             "IPv4&IPv6" -> RequestIpType.both
             else -> RequestIpType.auto
         }
+        Log.d("httpdns", "requestIp: $requestIpType")
 
         val requestClient = if (requestType == NetRequestType.OKHTTP) OkHttpRequest(getApplication(), requestIpType,
             asyncResolve.value!!

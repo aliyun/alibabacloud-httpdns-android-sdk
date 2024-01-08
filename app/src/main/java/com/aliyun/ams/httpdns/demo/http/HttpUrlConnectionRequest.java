@@ -34,15 +34,12 @@ import javax.net.ssl.SSLSocketFactory;
 
 /**
  * 使用HttpUrlConnection 实现请求
- *
- * @author zonglin.nzl
- * @date 8/31/22
  */
 public class HttpUrlConnectionRequest implements NetworkRequest {
 
     public static final String TAG = MyApp.TAG + "HttpUrl";
 
-    private Context context;
+    private final Context context;
     private boolean async;
     private RequestIpType type;
 
@@ -58,7 +55,7 @@ public class HttpUrlConnectionRequest implements NetworkRequest {
 
     @Override
     public String httpGet(String url) throws Exception {
-        Log.d(TAG, "使用httpurlconnect 请求" + url + " 异步接口 " + async + " ip类型 " + type.name());
+        Log.d(TAG, "使用httpUrlConnection 请求" + url + " 异步接口 " + async + " ip类型 " + type.name());
 
         HttpURLConnection conn = getConnection(url);
         InputStream in = null;
@@ -85,10 +82,11 @@ public class HttpUrlConnectionRequest implements NetworkRequest {
         final String host = new URL(url).getHost();
         HttpURLConnection conn = null;
         HTTPDNSResult result;
+        /* 切换为新版标准api */
         if (async) {
-            result = MyApp.getInstance().getService().getIpsByHostAsync(host, type);
+            result = MyApp.getInstance().getService().getHttpDnsResultForHostAsync(host, type);
         } else {
-            result = ((SyncService) MyApp.getInstance().getService()).getByHost(host, type);
+            result = MyApp.getInstance().getService().getHttpDnsResultForHostSync(host, type);
         }
         Log.d(TAG, "httpdns 解析 " + host + " 结果为 " + result + " ttl is " + Util.getTtl(result));
 
@@ -114,9 +112,10 @@ public class HttpUrlConnectionRequest implements NetworkRequest {
         conn.setInstanceFollowRedirects(false);
         if (conn instanceof HttpsURLConnection) {
             final HttpsURLConnection httpsURLConnection = (HttpsURLConnection) conn;
-            WebviewTlsSniSocketFactory sslSocketFactory = new WebviewTlsSniSocketFactory((HttpsURLConnection) conn);
+            WebviewTlsSniSocketFactory sslSocketFactory = new WebviewTlsSniSocketFactory(
+                (HttpsURLConnection)conn);
 
-            // sni场景，创建SSLScocket
+            // sni场景，创建SSLSocket
             httpsURLConnection.setSSLSocketFactory(sslSocketFactory);
             // https场景，证书校验
             httpsURLConnection.setHostnameVerifier(new HostnameVerifier() {
@@ -153,7 +152,7 @@ public class HttpUrlConnectionRequest implements NetworkRequest {
         return code >= 300 && code < 400;
     }
 
-    class WebviewTlsSniSocketFactory extends SSLSocketFactory {
+    static class WebviewTlsSniSocketFactory extends SSLSocketFactory {
         private final String TAG = WebviewTlsSniSocketFactory.class.getSimpleName();
         HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
         private HttpsURLConnection conn;
@@ -246,10 +245,6 @@ public class HttpUrlConnectionRequest implements NetworkRequest {
 
     /**
      * stream to string
-     *
-     * @param streamReader
-     * @return
-     * @throws IOException
      */
     public static StringBuilder readStringFrom(BufferedReader streamReader) throws IOException {
         StringBuilder sb = new StringBuilder();

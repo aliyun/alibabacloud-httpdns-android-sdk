@@ -52,7 +52,7 @@ public class ConfigCacheHelper {
 
 			SharedPreferences.Editor editor = mContext.getSharedPreferences(
 					Constants.CONFIG_CACHE_PREFIX + mHttpDnsConfig.getAccountId(),
-                    Context.MODE_PRIVATE)
+					Context.MODE_PRIVATE)
 				.edit();
 			SpCacheItem[] items = mHttpDnsConfig.getCacheItem();
 			for (SpCacheItem item : items) {

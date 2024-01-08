@@ -11,6 +11,10 @@ import androidx.lifecycle.ViewModelProvider
 import com.aliyun.ams.httpdns.demo.R
 import com.aliyun.ams.httpdns.demo.databinding.FragmentBestPracticeBinding
 
+/**
+ * @author allen.wy
+ * @date 2023/6/14
+ */
 class BestPracticeFragment : Fragment(), IBestPracticeShowDialog {
 
     private var _binding: FragmentBestPracticeBinding? = null

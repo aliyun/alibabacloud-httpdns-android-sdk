@@ -5,6 +5,10 @@ import java.net.InetAddress
 import java.net.Socket
 import javax.net.ssl.*
 
+/**
+ * @author allen.wy
+ * @date 2023/6/14
+ */
 class SNISocketFactory(private val conn: HttpsURLConnection) : SSLSocketFactory() {
     private val hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier()
 

@@ -3,6 +3,7 @@ package com.alibaba.sdk.android.httpdns.serverip;
 import com.alibaba.sdk.android.httpdns.ILogger;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
+import com.alibaba.sdk.android.httpdns.serverip.UpdateRegionServerResponse;
 import com.alibaba.sdk.android.httpdns.request.RequestCallback;
 import com.alibaba.sdk.android.httpdns.test.server.HttpDnsServer;
 import com.alibaba.sdk.android.httpdns.test.utils.RandomValue;
@@ -19,7 +20,7 @@ import org.robolectric.RuntimeEnvironment;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
-import static com.alibaba.sdk.android.httpdns.interpret.NormalCategoryTest.match;
+import static com.alibaba.sdk.android.httpdns.resolve.NormalCategoryTest.match;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.verify;
 public class UpdateServerTaskTest {
 
     private HttpDnsServer server = new HttpDnsServer();
-    private RequestCallback<UpdateServerResponse> callback = mock(RequestCallback.class);
+    private RequestCallback<UpdateRegionServerResponse> callback = mock(RequestCallback.class);
     private final String region = "region";
     private HttpDnsConfig httpDnsConfig;
     private TestExecutorService testExecutorService = new TestExecutorService(new ScheduledThreadPoolExecutor(4, new ThreadFactory() {
@@ -73,9 +74,9 @@ public class UpdateServerTaskTest {
 
     @Test
     public void sendUpdateServerRequestAndGetNewServers() {
-        UpdateServerResponse updateServerResponse = new UpdateServerResponse(RandomValue.randomIpv4s(), RandomValue.randomIpv6s(), RandomValue.randomPorts(), RandomValue.randomPorts());
+        UpdateRegionServerResponse updateServerResponse = new UpdateRegionServerResponse(RandomValue.randomIpv4s(), RandomValue.randomIpv6s(), RandomValue.randomPorts(), RandomValue.randomPorts());
         server.getServerIpsServer().preSetRequestResponse(region, updateServerResponse, -1);
-        UpdateServerTask.updateServer(httpDnsConfig, region, callback);
+        UpdateRegionServerTask.updateRegionServer(httpDnsConfig, region, callback);
         try {
             testExecutorService.await();
         } catch (InterruptedException e) {
@@ -88,26 +89,26 @@ public class UpdateServerTaskTest {
     @Test
     public void sendUpdateServerRequestAndServerNotAvailable() {
         server.getServerIpsServer().preSetRequestResponse(region, 403, "whatever", -1);
-        UpdateServerTask.updateServer(httpDnsConfig, region, callback);
+        UpdateRegionServerTask.updateRegionServer(httpDnsConfig, region, callback);
         try {
             testExecutorService.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        verify(callback, never()).onSuccess(any(UpdateServerResponse.class));
+        verify(callback, never()).onSuccess(any(UpdateRegionServerResponse.class));
         verify(callback).onFail(argThat(match(403, "whatever")));
     }
 
     @Test
     public void sendUpdateServerRequestAndServerNotReachable() {
         server.getServerIpsServer().preSetRequestTimeout(region, -1);
-        UpdateServerTask.updateServer(httpDnsConfig, region, callback);
+        UpdateRegionServerTask.updateRegionServer(httpDnsConfig, region, callback);
         try {
             testExecutorService.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        verify(callback, never()).onSuccess(any(UpdateServerResponse.class));
+        verify(callback, never()).onSuccess(any(UpdateRegionServerResponse.class));
         verify(callback).onFail(any(Throwable.class));
     }
 

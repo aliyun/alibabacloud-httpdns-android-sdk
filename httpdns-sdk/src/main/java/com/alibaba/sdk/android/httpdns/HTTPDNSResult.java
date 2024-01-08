@@ -19,7 +19,7 @@ public class HTTPDNSResult {
     Map<String, String> extra;
     long queryTime;
     int ttl;
-    boolean fromDB = false;
+    boolean fromDB;
 
     public HTTPDNSResult(String host) {
         this.host = host;
@@ -92,20 +92,19 @@ public class HTTPDNSResult {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("host:");
-        sb.append(host);
-        sb.append(", ips:");
-        sb.append(Arrays.toString(ips));
-        sb.append(", ipv6s:");
-        sb.append(Arrays.toString(ipv6s));
-        sb.append(", extras:");
-        sb.append(extra);
-        sb.append(", expired:");
-        sb.append(isExpired());
-        sb.append(", fromDB:");
-        sb.append(fromDB);
-        return sb.toString();
+        String sb = "host:"
+            + host
+            + ", ips:"
+            + Arrays.toString(ips)
+            + ", ipv6s:"
+            + Arrays.toString(ipv6s)
+            + ", extras:"
+            + extra
+            + ", expired:"
+            + isExpired()
+            + ", fromDB:"
+            + fromDB;
+        return sb;
     }
 
     public String getHost() {

@@ -4,6 +4,10 @@ import com.alibaba.sdk.android.httpdns.CacheTtlChanger
 import org.json.JSONException
 import org.json.JSONObject
 
+/**
+ * @author allen.wy
+ * @date 2023/6/6
+ */
 object TtlCacheHolder {
     var ttlCache = mutableMapOf<String, Int>()
 

@@ -42,7 +42,7 @@ public class NormalImpl extends HttpDnsServiceImpl {
 				sdkInfo.setExt(ext);
 				if (context.getApplicationContext() instanceof Application) {
 					AlicloudSender.asyncSend((Application)context.getApplicationContext(),
-						sdkInfo);
+                        sdkInfo);
 				} else {
 					AlicloudSender.asyncSend(context.getApplicationContext(), sdkInfo);
 				}

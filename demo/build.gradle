@@ -5,7 +5,7 @@ plugins {
 }
 
 gradle.ext {
-    httpVersion = '2.3.1'
+    httpVersion = '2.3.3'
 }
 
 android {
@@ -110,11 +110,13 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation project(path: ':httpdns-sdk')
-    implementation("com.aliyun.ams:alicloud-android-tool:1.0.2")
-
 
     implementation('com.alibaba:fastjson:1.1.73.android@jar')
 
+    implementation('com.emas.hybrid:emas-hybrid-android:1.1.0.3-public') {
+        exclude group: 'com.android.support', module: 'appcompat-v7'
+        exclude group: 'com.taobao.android', module: 'thin_so_release'
+    }
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

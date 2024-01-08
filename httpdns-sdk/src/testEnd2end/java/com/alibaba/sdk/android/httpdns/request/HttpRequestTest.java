@@ -27,9 +27,9 @@ public class HttpRequestTest {
         server.start();
         HttpRequestConfig requestConfig = new HttpRequestConfig(server.getServerIp(), server.getPort(), "/debug");
         requestConfig.setTimeout(2000);
-        httpRequest = new HttpRequest<>(requestConfig, new ResponseTranslator<String>() {
+        httpRequest = new HttpRequest<>(requestConfig, new ResponseParser<String>() {
             @Override
-            public String translate(String response) throws Throwable {
+            public String parse(String response) throws Throwable {
                 return response;
             }
         });

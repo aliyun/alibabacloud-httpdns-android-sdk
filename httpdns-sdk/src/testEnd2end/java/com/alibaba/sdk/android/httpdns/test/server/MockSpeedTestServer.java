@@ -1,6 +1,6 @@
 package com.alibaba.sdk.android.httpdns.test.server;
 
-import com.alibaba.sdk.android.httpdns.probe.ProbeTask;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingTask;
 import com.alibaba.sdk.android.httpdns.test.server.base.BaseDataServer;
 import com.alibaba.sdk.android.httpdns.test.server.base.RequestListener;
 import com.alibaba.sdk.android.httpdns.test.utils.UnitTestUtil;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
  * @author zonglin.nzl
  * @date 2020/11/9
  */
-public class MockSpeedTestServer implements ProbeTask.SpeedTestSocketFactory, RequestListener {
+public class MockSpeedTestServer implements IPRankingTask.SpeedTestSocketFactory, RequestListener {
 
     private int createCount = 0;
     private ArrayList<String[]> sortedIps = new ArrayList<>();
@@ -34,10 +34,10 @@ public class MockSpeedTestServer implements ProbeTask.SpeedTestSocketFactory, Re
 
     @Override
     public void onRequest(int type, Object arg, BaseDataServer server) {
-        // InterpretHostRequest
+        // ResolveHostRequest
         if (type == REQUEST_TYPE_INTERPRET_HOST) {
-            String host = ((InterpretHostServer.InterpretHostArg) arg).host;
-            String[] ips = ((InterpretHostServer) server).getResponse((InterpretHostServer.InterpretHostArg) arg, 1, false).get(0).getIps();
+            String host = ((ResolveHostServer.ResolveHostArg) arg).host;
+            String[] ips = ((ResolveHostServer) server).getResponse((ResolveHostServer.ResolveHostArg) arg, 1, false).get(0).getIps();
             String[] sorted = UnitTestUtil.changeArraySort(ips);
             sortedIps.add(sorted);
             sortedHostIpsMap.put(host, sorted);

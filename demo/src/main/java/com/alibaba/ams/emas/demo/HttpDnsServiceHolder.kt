@@ -6,6 +6,10 @@ import com.alibaba.sdk.android.httpdns.HttpDns
 import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.aliyun.ams.httpdns.demo.BuildConfig
 
+/**
+ * @author allen.wy
+ * @date 2023/6/6
+ */
 object HttpDnsServiceHolder {
 
     fun getHttpDnsService(context: Context) : HttpDnsService? {

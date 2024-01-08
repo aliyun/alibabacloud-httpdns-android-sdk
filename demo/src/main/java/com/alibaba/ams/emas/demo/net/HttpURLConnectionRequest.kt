@@ -20,6 +20,10 @@ import java.net.URL
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 
+/**
+ * @author allen.wy
+ * @date 2023/5/26
+ */
 class HttpURLConnectionRequest(private val context: Context, private val requestIpType: RequestIpType, private val async: Boolean): IRequest {
 
     override fun get(url: String): Response {
@@ -48,9 +52,10 @@ class HttpURLConnectionRequest(private val context: Context, private val request
 
         var ipURL: String? = null
         dnsService?.let {
+            //替换为最新的api
             val httpDnsResult =
-                if (async) dnsService.getIpsByHostAsync(host, requestIpType) else
-                    (dnsService as SyncService).getByHost(host, requestIpType)
+                if (async) dnsService.getHttpDnsResultForHostAsync(host, requestIpType) else
+                    dnsService.getHttpDnsResultForHostSync(host, requestIpType)
             Log.d("httpdns", "$host 解析结果 $httpDnsResult")
             val ipStackType = HttpDnsNetworkDetector.getInstance().getNetType(context)
             val isV6 = ipStackType == NetType.v6 || ipStackType == NetType.both

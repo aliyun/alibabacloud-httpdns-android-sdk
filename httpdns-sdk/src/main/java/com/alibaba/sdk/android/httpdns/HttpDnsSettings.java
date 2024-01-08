@@ -4,14 +4,14 @@ import android.content.Context;
 
 public class HttpDnsSettings {
 
-	private static boolean dailyReport = true;
+	private static boolean sDailyReport = true;
 
 	public static void setDailyReport(boolean dailyReport) {
-		HttpDnsSettings.dailyReport = dailyReport;
+		HttpDnsSettings.sDailyReport = dailyReport;
 	}
 
 	public static boolean isDailyReport() {
-		return dailyReport;
+		return sDailyReport;
 	}
 
 	private static NetworkChecker checker = new NetworkChecker() {

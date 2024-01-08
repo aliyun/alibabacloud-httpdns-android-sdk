@@ -1,6 +1,6 @@
 package com.alibaba.sdk.android.httpdns;
 
-import com.alibaba.sdk.android.httpdns.probe.ProbeTask;
+import com.alibaba.sdk.android.httpdns.ranking.IPRankingTask;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,7 +31,7 @@ public interface ApiForTest {
      * 指定 测试使用的socket factory
      * @param speedTestSocketFactory
      */
-    void setSocketFactory(ProbeTask.SpeedTestSocketFactory speedTestSocketFactory);
+    void setSocketFactory(IPRankingTask.SpeedTestSocketFactory speedTestSocketFactory);
 
     /**
      * 指定调度接口的调用间歇，避免正常的间歇过长无法测试

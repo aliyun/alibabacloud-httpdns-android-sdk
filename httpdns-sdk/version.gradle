@@ -1,5 +1,5 @@
 ext {
-    httpdnsDebugVersion = '2.3.1'
+    httpdnsDebugVersion = '2.3.3'
 
     loggerVersion = '1.2.0'
     senderVersion = '1.1.6'

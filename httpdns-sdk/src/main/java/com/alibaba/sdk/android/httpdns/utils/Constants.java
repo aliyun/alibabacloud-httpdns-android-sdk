@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import com.alibaba.sdk.android.httpdns.BuildConfig;
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
-import com.alibaba.sdk.android.httpdns.interpret.SniffException;
+import com.alibaba.sdk.android.httpdns.resolve.SniffException;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
 
 public class Constants {
@@ -40,7 +40,15 @@ public class Constants {
 	public static final boolean DEFAULT_ENABLE_HTTPS = false;
 	public static final String DEFAULT_SCHEMA = Constants.DEFAULT_ENABLE_HTTPS
 		? HttpRequestConfig.HTTPS_SCHEMA : HttpRequestConfig.HTTP_SCHEMA;
-	public static final int DEFAULT_TIMEOUT = 15 * 1000; // 默认超时时间 15s
+	/**
+	 * 默认超时时间2s
+	 */
+	public static final int DEFAULT_TIMEOUT = 2 * 1000;
+
+	/**
+	 * 同步锁的超时上限
+	 */
+	public static final int SYNC_TIMEOUT_MAX_LIMIT = 5 * 1000;
 
 	// 配置缓存使用的变量
 	public static final String CONFIG_CACHE_PREFIX = "httpdns_config_";

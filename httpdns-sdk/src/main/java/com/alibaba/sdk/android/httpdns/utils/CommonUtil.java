@@ -1,6 +1,5 @@
 package com.alibaba.sdk.android.httpdns.utils;
 
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;

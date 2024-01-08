@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class ServerIpRepoTest {
 
-    private ServerIpRepo repo = new ServerIpRepo();
+    private RegionServerIpRepo repo = new RegionServerIpRepo();
 
     @Test
     public void saveAndGet() {
