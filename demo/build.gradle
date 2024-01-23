@@ -109,7 +109,8 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
 
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation project(path: ':httpdns-sdk')
+//    implementation project(path: ':httpdns-sdk')
+    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.3.3'
 
     implementation('com.alibaba:fastjson:1.1.73.android@jar')
 
