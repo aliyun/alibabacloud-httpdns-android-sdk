@@ -1,10 +1,14 @@
 package com.alibaba.ams.emas.demo.ui.info.list
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -35,6 +39,8 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
                 kListItemTypeCacheTtl -> getString(R.string.ttl_cache_list)
                 kListItemTypeHostWithFixedIP -> getString(R.string.host_fixed_ip_list)
                 kListItemPreResolve -> getString(R.string.pre_resolve_list)
+                kListItemBatchResolve -> getString(R.string.batch_resolve_list)
+                kListItemTypeBlackList -> getString(R.string.host_black_list)
                 else -> getString(R.string.ip_probe_list)
             }
         }
@@ -62,29 +68,145 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
 
     private fun showAddDialog() {
         when (listType) {
-            kListItemTypeHostWithFixedIP, kListItemPreResolve -> {
-                val isPreResolve = listType == kListItemPreResolve
+            kListItemTypeHostWithFixedIP -> {
                 val input = LayoutInflater.from(this).inflate(R.layout.dialog_input, null)
                 val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
-                editText.hint =
-                    getString(if (isPreResolve) R.string.add_pre_resolve_hint else R.string.add_host_fixed_ip_hint)
+                editText.hint = getString(R.string.add_host_fixed_ip_hint)
 
                 val builder = AlertDialog.Builder(this)
-                builder.setTitle(getString(if (isPreResolve) R.string.add_pre_resolve else R.string.add_host_fixed_ip))
+                builder.setTitle(getString(R.string.add_host_fixed_ip))
                     .setView(input)
                     .setPositiveButton(R.string.confirm) { dialog, _ ->
                         when (val host = editText.text.toString()) {
                             "" -> Toast.makeText(
                                 this@ListActivity,
-                                if (isPreResolve) R.string.pre_resolve_host_is_empty else R.string.host_fixed_ip_empty,
+                                R.string.host_fixed_ip_empty,
                                 Toast.LENGTH_SHORT
                             ).show()
                             else -> {
-                                if (isPreResolve) {
-                                    viewModel.toAddPreResolveHost(host, listAdapter)
-                                } else {
-                                    viewModel.toAddHostWithFixedIP(host, listAdapter)
-                                }
+                                viewModel.toAddHostWithFixedIP(host, listAdapter)
+                            }
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+            kListItemTypeBlackList -> {
+                val input = LayoutInflater.from(this).inflate(R.layout.dialog_input, null)
+                val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
+                editText.hint = getString(R.string.add_host_to_black_list_hint)
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.add_host_to_black_list))
+                    .setView(input)
+                    .setPositiveButton(R.string.confirm) { dialog, _ ->
+                        when (val host = editText.text.toString()) {
+                            "" -> Toast.makeText(
+                                this@ListActivity,
+                                R.string.host_to_black_list_empty,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            else -> {
+                                viewModel.toAddHostInBlackList(host, listAdapter)
+                            }
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+            kListItemPreResolve -> {
+                val input = LayoutInflater.from(this).inflate(R.layout.dialog_input_3, null)
+                val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
+                editText.hint = getString(R.string.add_pre_resolve_hint)
+                val ipTypeGroup = input.findViewById<RadioGroup>(R.id.ip_type)
+
+                var view = createIpTypeRadio(this)
+                view.text = "IPv4"
+                view.isChecked = true
+                view.tag = 0
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "IPv6"
+                view.tag = 1
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "IPv4&IPv6"
+                view.tag = 2
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "自动判断IP类型"
+                view.tag = 3
+                ipTypeGroup.addView(view)
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.add_pre_resolve))
+                    .setView(input)
+                    .setPositiveButton(R.string.confirm) { dialog, _ ->
+                        when (val host = editText.text.toString()) {
+                            "" -> Toast.makeText(
+                                this@ListActivity,
+                                R.string.pre_resolve_host_is_empty,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            else -> {
+                                viewModel.toAddPreResolveHost(host, listAdapter, ipTypeGroup.findViewById<RadioButton>(ipTypeGroup.checkedRadioButtonId).tag as Int)
+                            }
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+            kListItemBatchResolve -> {
+                val input = LayoutInflater.from(this).inflate(R.layout.dialog_input_3, null)
+                val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
+                editText.hint = getString(R.string.add_batch_resolve_hint)
+                val ipTypeGroup = input.findViewById<RadioGroup>(R.id.ip_type)
+
+                var view = createIpTypeRadio(this)
+                view.text = "IPv4"
+                view.isChecked = true
+                view.tag = 0
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "IPv6"
+                view.tag = 1
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "IPv4&IPv6"
+                view.tag = 2
+                ipTypeGroup.addView(view)
+
+                view = createIpTypeRadio(this)
+                view.text = "自动判断IP类型"
+                view.tag = 3
+                ipTypeGroup.addView(view)
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.add_batch_resolve))
+                    .setView(input)
+                    .setPositiveButton(R.string.confirm) { dialog, _ ->
+                        when (val host = editText.text.toString()) {
+                            "" -> Toast.makeText(
+                                this@ListActivity,
+                                R.string.batch_resolve_host_is_empty,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            else -> {
+                                viewModel.toAddBatchResolveHost(host, listAdapter, ipTypeGroup.findViewById<RadioButton>(ipTypeGroup.checkedRadioButtonId).tag as Int)
                             }
                         }
                         dialog.dismiss()
@@ -159,6 +281,14 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
         }
     }
 
+    fun createIpTypeRadio(context: Context): RadioButton {
+        val btn = RadioButton(context)
+        btn.id = View.generateViewId()
+        val params = RadioGroup.LayoutParams(RadioGroup.LayoutParams.MATCH_PARENT, RadioGroup.LayoutParams.WRAP_CONTENT)
+        btn.layoutParams = params
+
+        return btn
+    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
@@ -181,8 +311,16 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
         viewModel.onTtlDeleted(host)
     }
 
-    override fun onPreResolveDeleted(position: Int) {
+    override fun onPreResolveDeleted(host: String, intValue: Int) {
         Log.d("httpdns", "onPreResolveDeleted")
-        viewModel.onPreResolveDeleted(position)
+        viewModel.onPreResolveDeleted(host, intValue)
+    }
+
+    override fun onHostBlackListDeleted(position: Int) {
+        viewModel.onHostBlackListDeleted(position)
+    }
+
+    override fun onBatchResolveDeleted(host: String, intValue: Int) {
+        viewModel.onBatchResolveDeleted(host, intValue)
     }
 }

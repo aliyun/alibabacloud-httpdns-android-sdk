@@ -1,13 +1,11 @@
 package com.alibaba.ams.emas.demo.ui.basic
 
 import android.app.Application
-import android.text.TextUtils
 import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import com.alibaba.ams.emas.demo.*
 import com.alibaba.ams.emas.demo.constant.*
-import com.alibaba.sdk.android.httpdns.HttpDns
 import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.alibaba.sdk.android.httpdns.RequestIpType
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog
@@ -89,7 +87,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putBoolean(KEY_ENABLE_EXPIRED_IP, checked)
         editor.apply()
-        dnsService?.setExpiredIPEnabled(checked)
     }
 
     fun toggleEnableCacheIp(button: CompoundButton, checked: Boolean) {
@@ -97,7 +94,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putBoolean(KEY_ENABLE_CACHE_IP, checked)
         editor.apply()
-        dnsService?.setCachedIPEnabled(checked)
     }
 
     fun toggleEnableHttps(button: CompoundButton, checked: Boolean) {
@@ -105,7 +101,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putBoolean(KEY_ENABLE_HTTPS, checked)
         editor.apply()
-        dnsService?.setHTTPSRequestEnabled(checked)
     }
 
     fun toggleEnableDegrade(button: CompoundButton, checked: Boolean) {
@@ -113,7 +108,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putBoolean(KEY_ENABLE_DEGRADE, checked)
         editor.apply()
-        dnsService?.setDegradationFilter { checked }
     }
 
     fun toggleEnableAutoRefresh(button: CompoundButton, checked: Boolean) {
@@ -121,7 +115,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putBoolean(KEY_ENABLE_AUTO_REFRESH, checked)
         editor.apply()
-        dnsService?.setPreResolveAfterNetworkChanged(checked)
     }
 
     fun toggleEnableLog(button: CompoundButton, checked: Boolean) {
@@ -159,7 +152,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         val editor = preferences.edit()
         editor.putInt(KEY_TIMEOUT, timeout)
         editor.apply()
-        dnsService?.setTimeoutInterval(timeout)
     }
 
     fun showClearCacheDialog() {
@@ -168,6 +160,24 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
 
     fun clearDnsCache(host: String) {
         dnsService?.cleanHostCache(mutableListOf(host) as ArrayList<String>)
+    }
+
+    fun batchResolveHosts() {
+        for (host in BatchResolveCacheHolder.batchResolveV4List) {
+            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.v4)
+        }
+
+        for (host in BatchResolveCacheHolder.batchResolveV6List) {
+            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.v6)
+        }
+
+        for (host in BatchResolveCacheHolder.batchResolveAutoList) {
+            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.auto)
+        }
+
+        for (host in BatchResolveCacheHolder.batchResolveBothList) {
+            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.both)
+        }
     }
 
     fun showAddPreResolveDialog() {
@@ -190,7 +200,6 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
             ).show()
         } else {
             hostList.add(host)
-            dnsService?.setPreResolveHosts(hostList as ArrayList<String>, RequestIpType.both)
         }
 
         val editor = preferences.edit()

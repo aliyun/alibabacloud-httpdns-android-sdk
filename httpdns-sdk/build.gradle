@@ -112,8 +112,6 @@ dependencies {
 
 
     normalImplementation "com.aliyun.ams:alicloud-android-utdid:${utdidVersion}"
-    normalImplementation "com.aliyun.ams:alicloud-android-sender:${senderVersion}"
-    normalImplementation "com.aliyun.ams:alicloud-android-beacon:${beaconVersion}"
 }
 
 ext.getIntlVersion = { version ->

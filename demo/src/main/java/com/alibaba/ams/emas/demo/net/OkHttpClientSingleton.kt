@@ -3,6 +3,8 @@ package com.alibaba.ams.emas.demo.net
 import android.content.Context
 import android.util.Log
 import com.alibaba.ams.emas.demo.HttpDnsServiceHolder
+import com.alibaba.sdk.android.httpdns.HTTPDNSResult
+import com.alibaba.sdk.android.httpdns.HttpDnsCallback
 import com.alibaba.sdk.android.httpdns.NetType
 import com.alibaba.sdk.android.httpdns.RequestIpType
 import com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector
@@ -11,6 +13,7 @@ import okhttp3.Dns
 import okhttp3.OkHttpClient
 import java.lang.ref.WeakReference
 import java.net.InetAddress
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -23,9 +26,12 @@ import java.util.concurrent.TimeUnit
     private val mContext = WeakReference(context)
 
     private var mRequestIpType = RequestIpType.v4
-    private var mAsync: Boolean = false
+    private var mResolveMethod: String = "getHttpDnsResultForHostSync(String host, RequestIpType type)"
+    private var mIsSdns: Boolean = false
+    private var mSdnsParams: Map<String, String>? = null
+    private var mCacheKey: String? = null
 
-    private val tag: String = "OkHttpClientSingleton"
+    private val tag: String = "httpdns:hOkHttpClientSingleton"
 
     companion object {
         @Volatile
@@ -47,10 +53,12 @@ import java.util.concurrent.TimeUnit
         }
     }
 
-    fun updateConfig(requestIpType: RequestIpType,
-                     async: Boolean): OkHttpClientSingleton {
+    fun updateConfig(requestIpType: RequestIpType, resolveMethod: String, isSdns: Boolean, params: Map<String, String>?, cacheKey: String): OkHttpClientSingleton {
         mRequestIpType = requestIpType
-        mAsync = async
+        mResolveMethod = resolveMethod
+        mIsSdns = isSdns
+        mSdnsParams = params
+        mCacheKey = cacheKey
         return this
     }
 
@@ -62,29 +70,46 @@ import java.util.concurrent.TimeUnit
                 override fun lookup(hostname: String): List<InetAddress> {
                     val dnsService = HttpDnsServiceHolder.getHttpDnsService(mContext.get()!!)
                     //修改为最新的通俗易懂的api
-                    val httpDnsResult =
-                        if (mAsync) dnsService?.getHttpDnsResultForHostAsync(hostname, mRequestIpType) else
-                            dnsService?.getHttpDnsResultForHostSync(hostname, mRequestIpType)
-
-                    Log.d(tag, "httpdns $hostname 解析结果 $httpDnsResult")
-                    // 这里需要根据实际情况选择使用ipv6地址 还是 ipv4地址， 下面示例的代码优先使用了ipv6地址
-                    val ipStackType = HttpDnsNetworkDetector.getInstance().getNetType(mContext.get())
+                    var httpDnsResult: HTTPDNSResult? = null
                     val inetAddresses = mutableListOf<InetAddress>()
-                    val isV6 = ipStackType == NetType.v6 || ipStackType == NetType.both
-                    val isV4 = ipStackType == NetType.v4 || ipStackType == NetType.both
-                    if (httpDnsResult?.ipv6s != null && httpDnsResult.ipv6s.isNotEmpty() && isV6) {
-                        for (i in httpDnsResult.ipv6s.indices) {
-                            inetAddresses.addAll(
-                                InetAddress.getAllByName(httpDnsResult.ipv6s[i]).toList()
-                            )
+                    if (mResolveMethod == "getHttpDnsResultForHostSync(String host, RequestIpType type)") {
+                        httpDnsResult = if (mIsSdns) {
+                            dnsService?.getHttpDnsResultForHostSync(hostname, mRequestIpType, mSdnsParams, mCacheKey)
+                        } else {
+                            dnsService?.getHttpDnsResultForHostSync(hostname, mRequestIpType)
                         }
-                    } else if (httpDnsResult?.ips != null && httpDnsResult.ips.isNotEmpty() && isV4) {
-                        for (i in httpDnsResult.ips.indices) {
-                            inetAddresses.addAll(
-                                InetAddress.getAllByName(httpDnsResult.ips[i]).toList()
-                            )
+                    } else if (mResolveMethod == "getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback)") {
+                        val lock = CountDownLatch(1)
+                        if (mIsSdns) {
+                            dnsService?.getHttpDnsResultForHostAsync(
+                                hostname,
+                                mRequestIpType,
+                                mSdnsParams,
+                                mCacheKey,
+                                HttpDnsCallback {
+                                    httpDnsResult = it
+                                    lock.countDown()
+                                })
+                        } else {
+                            dnsService?.getHttpDnsResultForHostAsync(
+                                hostname,
+                                mRequestIpType,
+                                HttpDnsCallback {
+                                    httpDnsResult = it
+                                    lock.countDown()
+                                })
+                        }
+                        lock.await()
+                    } else if (mResolveMethod == "getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type)") {
+                        httpDnsResult = if (mIsSdns) {
+                            dnsService?.getHttpDnsResultForHostSyncNonBlocking(hostname, mRequestIpType, mSdnsParams,  mCacheKey)
+                        } else {
+                            dnsService?.getHttpDnsResultForHostSyncNonBlocking(hostname, mRequestIpType)
                         }
                     }
+
+                    Log.d(tag, "httpdns $hostname 解析结果 $httpDnsResult")
+                    httpDnsResult?.let { processDnsResult(it, inetAddresses) }
 
                     if (inetAddresses.isEmpty()) {
                         Log.d(tag, "httpdns 未返回IP，走local dns")
@@ -96,5 +121,23 @@ import java.util.concurrent.TimeUnit
             .build()
     }
 
+    fun processDnsResult(httpDnsResult: HTTPDNSResult, inetAddresses: MutableList<InetAddress>) {
+        val ipStackType = HttpDnsNetworkDetector.getInstance().getNetType(mContext.get())
+        val isV6 = ipStackType == NetType.v6 || ipStackType == NetType.both
+        val isV4 = ipStackType == NetType.v4 || ipStackType == NetType.both
 
+        if (httpDnsResult.ipv6s != null && httpDnsResult.ipv6s.isNotEmpty() && isV6) {
+            for (i in httpDnsResult.ipv6s.indices) {
+                inetAddresses.addAll(
+                    InetAddress.getAllByName(httpDnsResult.ipv6s[i]).toList()
+                )
+            }
+        } else if (httpDnsResult.ips != null && httpDnsResult.ips.isNotEmpty() && isV4) {
+            for (i in httpDnsResult.ips.indices) {
+                inetAddresses.addAll(
+                    InetAddress.getAllByName(httpDnsResult.ips[i]).toList()
+                )
+            }
+        }
+    }
 }

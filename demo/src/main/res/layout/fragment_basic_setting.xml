@@ -172,11 +172,23 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:drawableEnd="@drawable/ic_arrow_right"
+                        android:onClick="@{() -> viewModel.batchResolveHosts()}"
+                        android:padding="18dp"
+                        android:text="@string/batch_resolve"
+                        android:textColor="@color/black"
+                        android:background="?selectableItemBackground"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
                         android:onClick="@{() -> viewModel.showAddPreResolveDialog()}"
                         android:padding="18dp"
                         android:text="@string/add_pre_resolve"
                         android:textColor="@color/black"
                         android:background="?selectableItemBackground"
+                        android:visibility="gone"
                         android:textSize="16dp" />
 
                 </LinearLayout>

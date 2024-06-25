@@ -80,6 +80,7 @@ public class HttpDnsConfig implements SpCacheItem {
 	private final ConfigCacheHelper mCacheHelper;
 
 	protected ExecutorService mWorker = ThreadUtil.createExecutorService();
+	protected ExecutorService mResolveWorker = ThreadUtil.createResolveExecutorService();
 	protected ExecutorService mDbWorker = ThreadUtil.createDBExecutorService();
 
 	public HttpDnsConfig(Context context, String accountId) {
@@ -151,6 +152,10 @@ public class HttpDnsConfig implements SpCacheItem {
 		return mWorker;
 	}
 
+	public ExecutorService getResolveWorker() {
+		return mResolveWorker;
+	}
+
 	public ExecutorService getDbWorker() {
 		return mDbWorker;
 	}
@@ -159,6 +164,7 @@ public class HttpDnsConfig implements SpCacheItem {
 		// 给测试使用
 		this.mWorker = worker;
 		this.mDbWorker = worker;
+		mResolveWorker = worker;
 	}
 
 	/**
@@ -229,6 +235,7 @@ public class HttpDnsConfig implements SpCacheItem {
 			CommonUtil.equals(mRegion, that.mRegion) &&
 			CommonUtil.equals(mCacheHelper, that.mCacheHelper) &&
 			CommonUtil.equals(mWorker, that.mWorker) &&
+			CommonUtil.equals(mResolveWorker, that.mResolveWorker) &&
 			CommonUtil.equals(mDbWorker, that.mDbWorker);
 	}
 
@@ -238,7 +245,7 @@ public class HttpDnsConfig implements SpCacheItem {
 			new Object[] {mContext, mEnabled, mInitServer, mDefaultUpdateServer, mCurrentServer,
 				mAccountId, mSchema, mRegion, mTimeout, mHitCrashDefend, mRemoteDisabled,
 				mIPRankingDisabled,
-				mCacheHelper, mWorker, mDbWorker});
+				mCacheHelper, mWorker, mResolveWorker, mDbWorker});
 	}
 
 	/**

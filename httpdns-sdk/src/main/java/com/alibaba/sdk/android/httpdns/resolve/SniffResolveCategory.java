@@ -46,8 +46,7 @@ public class SniffResolveCategory implements ResolveHostCategory {
             mScheduleService,
 			mStatusControl));
 		try {
-			config.getWorker().execute(
-                new HttpRequestTask<>(request, callback));
+			config.getResolveWorker().execute(new HttpRequestTask<>(request, callback));
 		} catch (Throwable tr) {
 			callback.onFail(tr);
 		}

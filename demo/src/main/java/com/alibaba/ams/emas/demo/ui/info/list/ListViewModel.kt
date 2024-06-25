@@ -2,25 +2,24 @@ package com.alibaba.ams.emas.demo.ui.info.list
 
 import android.app.Application
 import android.content.SharedPreferences
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alibaba.ams.emas.demo.*
 import com.alibaba.ams.emas.demo.TtlCacheHolder.toJsonString
+import com.alibaba.ams.emas.demo.constant.KEY_BATCH_RESOLVE_HOST_LIST
+import com.alibaba.ams.emas.demo.constant.KEY_HOST_BLACK_LIST
 import com.alibaba.ams.emas.demo.constant.KEY_HOST_WITH_FIXED_IP
 import com.alibaba.ams.emas.demo.constant.KEY_IP_RANKING_ITEMS
 import com.alibaba.ams.emas.demo.constant.KEY_PRE_RESOLVE_HOST_LIST
 import com.alibaba.ams.emas.demo.constant.KEY_TTL_CHANGER
 import com.alibaba.sdk.android.httpdns.HttpDnsService
-import com.alibaba.sdk.android.httpdns.RequestIpType
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean
 import com.aliyun.ams.httpdns.demo.R
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.ArrayList
 
 /**
  * @author allen.wy
@@ -30,7 +29,7 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
 
     private var hostFixedIpList: MutableList<String> = mutableListOf()
     private var ipRankingList: MutableList<IPRankingBean> = mutableListOf()
-    private var preResolveHostList: MutableList<String> = mutableListOf()
+    private var hostBlackList: MutableList<String> = mutableListOf()
 
     private var dnsService: HttpDnsService? = null
 
@@ -51,6 +50,16 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 }
+                kListItemTypeBlackList -> {
+                    val hostBlackListStr = preferences.getString(KEY_HOST_BLACK_LIST, null)
+                    val list = hostBlackListStr.toBlackList()
+                    list?.let {
+                        hostBlackList.addAll(list)
+                        for (host in hostBlackList) {
+                            infoList.add(ListItem(kListItemTypeBlackList, host, 0))
+                        }
+                    }
+                }
                 kListItemTypeCacheTtl -> {
                     val ttlCacheStr = preferences.getString(KEY_TTL_CHANGER, null)
                     val map = ttlCacheStr.toTtlCacheMap()
@@ -62,13 +71,37 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 kListItemPreResolve -> {
-                    val preResolveHostStr = preferences.getString(KEY_PRE_RESOLVE_HOST_LIST, null)
-                    val list = preResolveHostStr.toHostList()
-                    list?.let {
-                        preResolveHostList.addAll(list)
-                        for (host in preResolveHostList) {
-                            infoList.add(ListItem(kListItemPreResolve, host, 0))
-                        }
+                    for (host in PreResolveCacheHolder.preResolveV4List) {
+                        infoList.add(ListItem(kListItemPreResolve, host, 0))
+                    }
+
+                    for (host in PreResolveCacheHolder.preResolveV6List) {
+                        infoList.add(ListItem(kListItemPreResolve, host, 1))
+                    }
+
+                    for (host in PreResolveCacheHolder.preResolveBothList) {
+                        infoList.add(ListItem(kListItemPreResolve, host, 2))
+                    }
+
+                    for (host in PreResolveCacheHolder.preResolveAutoList) {
+                        infoList.add(ListItem(kListItemPreResolve, host, 3))
+                    }
+                }
+                kListItemBatchResolve -> {
+                    for (host in BatchResolveCacheHolder.batchResolveV4List) {
+                        infoList.add(ListItem(kListItemBatchResolve, host, 0))
+                    }
+
+                    for (host in BatchResolveCacheHolder.batchResolveV6List) {
+                        infoList.add(ListItem(kListItemBatchResolve, host, 1))
+                    }
+
+                    for (host in BatchResolveCacheHolder.batchResolveBothList) {
+                        infoList.add(ListItem(kListItemBatchResolve, host, 2))
+                    }
+
+                    for (host in BatchResolveCacheHolder.batchResolveAutoList) {
+                        infoList.add(ListItem(kListItemBatchResolve, host, 3))
                     }
                 }
                 else -> {
@@ -111,6 +144,26 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toAddHostInBlackList(host: String, listAdapter: ListAdapter) {
+        if (hostBlackList.contains(host)) {
+            Toast.makeText(
+                getApplication(),
+                getString(R.string.host_black_list_duplicate, host),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            hostBlackList.add(host)
+            saveHostInBlackList()
+            listAdapter.addItemData(
+                ListItem(
+                    kListItemTypeBlackList,
+                    host,
+                    0
+                )
+            )
+        }
+    }
+
     private fun saveHostWithFixedIP() {
         viewModelScope.launch {
             val array = JSONArray()
@@ -121,6 +174,19 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             val editor = preferences.edit()
             editor.putString(KEY_HOST_WITH_FIXED_IP, hostStr)
             editor.apply()
+        }
+    }
+
+    private fun saveHostInBlackList() {
+        viewModelScope.launch {
+            val array = JSONArray()
+            for (host in hostBlackList) {
+                array.put(host)
+            }
+
+            preferences.edit()
+                .putString(KEY_HOST_BLACK_LIST, array.toString())
+                .apply()
         }
     }
 
@@ -143,7 +209,6 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                     port
                 )
             )
-            dnsService?.setIPProbeList(ipRankingList)
         }
     }
 
@@ -183,32 +248,72 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
         TtlCacheHolder.ttlCache[host] = ttl
     }
 
-    fun toAddPreResolveHost(host: String, listAdapter: ListAdapter) {
-        if (preResolveHostList.contains(host)) {
+    fun toAddPreResolveHost(host: String, listAdapter: ListAdapter, type: Int) {
+        val list: MutableList<String> = when (type) {
+            0 -> PreResolveCacheHolder.preResolveV4List
+            1 -> PreResolveCacheHolder.preResolveV6List
+            2 -> PreResolveCacheHolder.preResolveBothList
+            else -> PreResolveCacheHolder.preResolveAutoList
+        }
+
+        if (list.contains(host)) {
             Toast.makeText(
                 getApplication(),
                 getString(R.string.pre_resolve_host_duplicate, host),
                 Toast.LENGTH_SHORT
             ).show()
         } else {
-            preResolveHostList.add(host)
+            list.add(host)
             savePreResolveHost()
             listAdapter.addItemData(
                 ListItem(
                     kListItemPreResolve,
                     host,
-                    0
+                    type
                 )
             )
-            Log.d("httpdns", "before set pre")
-            dnsService?.setPreResolveHosts(preResolveHostList as ArrayList<String>?, RequestIpType.both)
+        }
+    }
+
+    fun toAddBatchResolveHost(host: String, listAdapter: ListAdapter, type: Int) {
+        val list: MutableList<String> = when (type) {
+            0 -> BatchResolveCacheHolder.batchResolveV4List
+            1 -> BatchResolveCacheHolder.batchResolveV6List
+            2 -> BatchResolveCacheHolder.batchResolveBothList
+            else -> BatchResolveCacheHolder.batchResolveAutoList
+        }
+
+        if (list.contains(host)) {
+            Toast.makeText(
+                getApplication(),
+                getString(R.string.batch_resolve_host_duplicate, host),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            list.add(host)
+            saveBatchResolveHost()
+            listAdapter.addItemData(
+                ListItem(
+                    kListItemBatchResolve,
+                    host,
+                    type
+                )
+            )
         }
     }
 
     private fun savePreResolveHost() {
         viewModelScope.launch {
             val editor = preferences.edit()
-            editor.putString(KEY_PRE_RESOLVE_HOST_LIST, convertPreResolveList(preResolveHostList))
+            editor.putString(KEY_PRE_RESOLVE_HOST_LIST, PreResolveCacheHolder.convertPreResolveString())
+            editor.apply()
+        }
+    }
+
+    private fun saveBatchResolveHost() {
+        viewModelScope.launch {
+            val editor = preferences.edit()
+            editor.putString(KEY_BATCH_RESOLVE_HOST_LIST, BatchResolveCacheHolder.convertBatchResolveString())
             editor.apply()
         }
     }
@@ -222,7 +327,6 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     fun onIPProbeItemDeleted(position: Int) {
         ipRankingList.removeAt(position)
         saveIPProbe()
-        dnsService?.setIPProbeList(ipRankingList)
     }
 
     fun onTtlDeleted(host: String) {
@@ -234,10 +338,31 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onPreResolveDeleted(position: Int) {
-        preResolveHostList.removeAt(position)
+    fun onPreResolveDeleted(host: String, intValue: Int) {
+        val list = when (intValue) {
+            0 -> PreResolveCacheHolder.preResolveV4List
+            1 -> PreResolveCacheHolder.preResolveV6List
+            2 -> PreResolveCacheHolder.preResolveBothList
+            else -> PreResolveCacheHolder.preResolveAutoList
+        }
+        list.remove(host)
         savePreResolveHost()
-        dnsService?.setPreResolveHosts(preResolveHostList as ArrayList<String>?, RequestIpType.both)
+    }
+
+    fun onBatchResolveDeleted(host: String, intValue: Int) {
+        val list = when (intValue) {
+            0 -> BatchResolveCacheHolder.batchResolveV4List
+            1 -> BatchResolveCacheHolder.batchResolveV6List
+            2 -> BatchResolveCacheHolder.batchResolveBothList
+            else -> BatchResolveCacheHolder.batchResolveAutoList
+        }
+        list.remove(host)
+        saveBatchResolveHost()
+    }
+
+    fun onHostBlackListDeleted(position: Int) {
+        hostBlackList.removeAt(position)
+        saveHostInBlackList()
     }
 
     private fun getString(resId: Int, vararg args: String): String {

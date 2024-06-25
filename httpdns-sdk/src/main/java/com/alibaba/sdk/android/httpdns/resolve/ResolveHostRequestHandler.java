@@ -56,7 +56,7 @@ public class ResolveHostRequestHandler {
 			extras, cacheKey,
 			mGlobalParams, mSignService);
 		if (HttpDnsLog.isPrint()) {
-			HttpDnsLog.d("start async ip request for " + host + " " + type);
+			HttpDnsLog.d("start resolve ip request for " + host + " " + type);
 		}
 		mCategoryController.getCategory().resolve(mHttpDnsConfig, requestConfig, callback);
 	}
@@ -91,7 +91,7 @@ public class ResolveHostRequestHandler {
 		// 重试一次
 		request = new RetryHttpRequest<>(request, 1);
 		try {
-			mHttpDnsConfig.getWorker().execute(
+			mHttpDnsConfig.getResolveWorker().execute(
 				new HttpRequestTask<>(request, callback));
 		} catch (Throwable e) {
 			callback.onFail(e);

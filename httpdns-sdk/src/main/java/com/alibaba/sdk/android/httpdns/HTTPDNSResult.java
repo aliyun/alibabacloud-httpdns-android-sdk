@@ -124,7 +124,7 @@ public class HTTPDNSResult {
     }
 
     public boolean isExpired() {
-        return System.currentTimeMillis() > queryTime + ttl * 1000;
+        return Math.abs(System.currentTimeMillis() - queryTime) > ttl * 1000L;
     }
 
     public boolean isFromDB() {

@@ -1,13 +1,11 @@
 package com.alibaba.sdk.android.httpdns.impl;
 
-import com.alibaba.sdk.android.httpdns.DegradationFilter;
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HttpDnsCallback;
 import com.alibaba.sdk.android.httpdns.HttpDnsService;
-import com.alibaba.sdk.android.httpdns.ILogger;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
-import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 import java.util.ArrayList;
@@ -15,18 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 public class ErrorImpl implements HttpDnsService, SyncService {
+
     @Override
-    public void setLogEnabled(boolean shouldPrintLog) {
+    public void setPreResolveHosts(List<String> hostList) {
 
     }
 
     @Override
-    public void setPreResolveHosts(ArrayList<String> hostList) {
-
-    }
-
-    @Override
-    public void setPreResolveHosts(ArrayList<String> hostList, RequestIpType requestIpType) {
+    public void setPreResolveHosts(List<String> hostList, RequestIpType requestIpType) {
 
     }
 
@@ -85,63 +79,13 @@ public class ErrorImpl implements HttpDnsService, SyncService {
     }
 
     @Override
-    public void setExpiredIPEnabled(boolean enable) {
-
-    }
-
-    @Override
-    public void setCachedIPEnabled(boolean enable) {
-
-    }
-
-    @Override
-    public void setCachedIPEnabled(boolean enable, boolean autoCleanCacheAfterLoad) {
-
-    }
-
-    @Override
     public void setAuthCurrentTime(long time) {
-
-    }
-
-    @Override
-    public void setDegradationFilter(DegradationFilter filter) {
-
-    }
-
-    @Override
-    public void setPreResolveAfterNetworkChanged(boolean enable) {
-
-    }
-
-    @Override
-    public void setTimeoutInterval(int timeoutInterval) {
-
-    }
-
-    @Override
-    public void setHTTPSRequestEnabled(boolean enabled) {
-
-    }
-
-    @Override
-    public void setIPProbeList(List<IPRankingBean> ipProbeList) {
-
-    }
-
-    @Override
-    public void setIPRankingList(List<IPRankingBean> ipRankingList) {
 
     }
 
     @Override
     public String getSessionId() {
         return null;
-    }
-
-    @Override
-    public void setLogger(ILogger logger) {
-
     }
 
     @Override
@@ -171,13 +115,18 @@ public class ErrorImpl implements HttpDnsService, SyncService {
     }
 
     @Override
-    public void setSdnsGlobalParams(Map<String, String> params) {
+    public HTTPDNSResult getHttpDnsResultForHostSync(String host, RequestIpType type, Map<String, String> params, String cacheKey) {
+        return Constants.EMPTY;
+    }
+
+    @Override
+    public void getHttpDnsResultForHostAsync(String host, RequestIpType type, Map<String, String> params, String cacheKey, HttpDnsCallback callback) {
 
     }
 
     @Override
-    public void clearSdnsGlobalParams() {
-
+    public HTTPDNSResult getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type, Map<String, String> params, String cacheKey) {
+        return Constants.EMPTY;
     }
 
     @Override
@@ -207,12 +156,17 @@ public class ErrorImpl implements HttpDnsService, SyncService {
     }
 
     @Override
-    public void enableCrashDefend(boolean enabled) {
+    public HTTPDNSResult getHttpDnsResultForHostSync(String host, RequestIpType type) {
+        return Constants.EMPTY;
+    }
+
+    @Override
+    public void getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback) {
 
     }
 
     @Override
-    public HTTPDNSResult getHttpDnsResultForHostSync(String host, RequestIpType type) {
+    public HTTPDNSResult getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type) {
         return Constants.EMPTY;
     }
 }

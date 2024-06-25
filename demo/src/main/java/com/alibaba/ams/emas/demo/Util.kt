@@ -76,6 +76,23 @@ fun String?.toTtlCacheMap(): MutableMap<String, Int>? {
     return null
 }
 
+fun String?.toBlackList(): MutableList<String>? {
+    if (this == null) {
+        return null
+    }
+    try {
+        val array = JSONArray(this)
+        val list = mutableListOf<String>()
+        for (i in 0 until array.length()) {
+            list.add(array.getString(i))
+        }
+        return list
+    } catch (e: JSONException) {
+        e.printStackTrace()
+    }
+    return null
+}
+
 fun getAccountPreference(context: Context): SharedPreferences {
     return context.getSharedPreferences(
         "aliyun_httpdns_${BuildConfig.ACCOUNT_ID}",

@@ -22,12 +22,6 @@
                 android:value="" />
         </activity>
 
-        <activity android:name="com.alibaba.ams.emas.demo.ui.practice.HttpDnsWVWebViewActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AlicloudHttpDnsDemo.NoActionBar">
-
-        </activity>
-
         <activity
             android:name="com.alibaba.ams.emas.demo.ui.info.list.ListActivity"
             android:exported="false"
@@ -46,6 +40,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity android:name="com.alibaba.ams.emas.demo.ui.info.SdnsGlobalSettingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AlicloudHttpDnsDemo.NoActionBar" >
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

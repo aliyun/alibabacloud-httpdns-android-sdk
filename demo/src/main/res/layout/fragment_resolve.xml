@@ -13,7 +13,8 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.resolve.ResolveFragment">
+        tools:context=".ui.resolve.ResolveFragment"
+        android:paddingBottom="60dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
 
@@ -83,14 +84,83 @@
                     </RelativeLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/enable_async_resolve"
+                        android:id="@+id/enable_sdns_resolve"
                         style="@style/Widget.HttpDnsDemo.Settings.Switch"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:checked="@{viewModel.asyncResolve}"
-                        android:onCheckedChanged="@{viewModel::toggleEnableAsync}"
-                        android:text="@string/async_resolve"
+                        android:checked="@{viewModel.isSdns}"
+                        android:text="@string/sdns_resolve"
                         android:textSize="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/sdns_params_input_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@android:color/transparent"
+                        android:backgroundTint="@color/white"
+                        android:hint="@string/input_the_sdns_params"
+                        app:boxBackgroundColor="@android:color/transparent"
+                        app:errorEnabled="true"
+                        app:helperText="@string/input_the_sdns_params_help_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/sdns_cache_key_input_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@android:color/transparent"
+                        android:backgroundTint="@color/white"
+                        android:hint="@string/input_the_sdns_cache_key"
+                        app:boxBackgroundColor="@android:color/transparent"
+                        app:errorEnabled="true"
+                        app:helperText="@string/input_the_sdns_cache_key_help_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?selectableItemBackground"
+                        android:padding="12dp"
+                        android:onClick="@{() -> viewModel.setResolveMethod()}"
+                        android:orientation="vertical"
+                        >
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:padding="5dp"
+                            android:text="@string/resolve_method"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/resolve_method"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.currentResolveMethod)}"
+                            android:textColor="@color/black"
+                            android:textSize="12dp" />
+                    </LinearLayout>
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -121,6 +191,34 @@
 
                     </RelativeLayout>
 
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?selectableItemBackground"
+                        android:onClick="@{() -> viewModel.setRequestNumber()}"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:padding="5dp"
+                            android:text="@string/request_num"
+                            android:textColor="@color/black"
+                            android:textSize="16dp" />
+
+                        <TextView
+                            android:id="@+id/request_num"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:padding="5dp"
+                            android:text="@{String.valueOf(viewModel.requestNum)}"
+                            android:textColor="@color/black"
+                            android:textSize="14dp"
+                            tools:text="1" />
+
+                    </RelativeLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/resolve_host_input_layout"

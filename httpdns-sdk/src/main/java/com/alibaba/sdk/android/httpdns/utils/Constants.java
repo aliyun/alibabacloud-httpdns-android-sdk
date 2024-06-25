@@ -37,6 +37,7 @@ public class Constants {
 	public static final boolean DEFAULT_SDK_ENABLE = true;
 	public static final boolean DEFAULT_ENABLE_EXPIRE_IP = true;
 	public static final boolean DEFAULT_ENABLE_CACHE_IP = false;
+	public static final boolean DEFAULT_ENABLE_AUTO_CLEAN_CACHE_AFTER_LOAD = false;
 	public static final boolean DEFAULT_ENABLE_HTTPS = false;
 	public static final String DEFAULT_SCHEMA = Constants.DEFAULT_ENABLE_HTTPS
 		? HttpRequestConfig.HTTPS_SCHEMA : HttpRequestConfig.HTTP_SCHEMA;

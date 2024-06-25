@@ -40,6 +40,21 @@ public class ThreadUtil {
 			new SynchronousQueue<>(), new ThreadFactory() {
 			@Override
 			public Thread newThread(Runnable r) {
+				Thread thread = new Thread(r, "httpdns_worker" + index++);
+				thread.setPriority(Thread.NORM_PRIORITY - 1);
+				thread.setUncaughtExceptionHandler(new HttpDnsUncaughtExceptionHandler());
+				return thread;
+			}
+		}, new ThreadPoolExecutor.AbortPolicy());
+		return new ExecutorServiceWrapper(httpDnsThread);
+	}
+
+	public static ExecutorService createResolveExecutorService() {
+		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(0, 20, 30,
+				TimeUnit.SECONDS,
+				new SynchronousQueue<>(), new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
 				Thread thread = new Thread(r, "httpdns" + index++);
 				thread.setPriority(Thread.NORM_PRIORITY - 1);
 				thread.setUncaughtExceptionHandler(new HttpDnsUncaughtExceptionHandler());

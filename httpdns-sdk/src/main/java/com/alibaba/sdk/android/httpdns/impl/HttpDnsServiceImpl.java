@@ -8,11 +8,10 @@ import java.util.Map;
 import com.alibaba.sdk.android.crashdefend.CrashDefendApi;
 import com.alibaba.sdk.android.crashdefend.CrashDefendCallback;
 import com.alibaba.sdk.android.httpdns.BuildConfig;
-import com.alibaba.sdk.android.httpdns.DegradationFilter;
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HttpDnsCallback;
 import com.alibaba.sdk.android.httpdns.HttpDnsService;
 import com.alibaba.sdk.android.httpdns.HttpDnsSettings;
-import com.alibaba.sdk.android.httpdns.ILogger;
 import com.alibaba.sdk.android.httpdns.InitConfig;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
@@ -26,7 +25,6 @@ import com.alibaba.sdk.android.httpdns.resolve.BatchResolveHostService;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector;
 import com.alibaba.sdk.android.httpdns.net.NetworkStateManager;
-import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingService;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService.OnRegionServerIpUpdate;
@@ -70,13 +68,13 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			mScheduleService = new RegionServerScheduleService(this.mHttpDnsConfig, this);
 			mRequestHandler = new ResolveHostRequestHandler(mHttpDnsConfig, mScheduleService,
                 mSignService);
-            HostResolveRecorder recorder = new HostResolveRecorder();
-            mResolveHostService = new ResolveHostService(this.mHttpDnsConfig,
+			HostResolveLocker asyncLocker = new HostResolveLocker();
+			mResolveHostService = new ResolveHostService(this.mHttpDnsConfig,
 				mIpIPRankingService,
-                mRequestHandler, mResultRepo, mFilter, recorder);
+                mRequestHandler, mResultRepo, mFilter, asyncLocker);
 			mBatchResolveHostService = new BatchResolveHostService(this.mHttpDnsConfig, mResultRepo,
                 mRequestHandler,
-				mIpIPRankingService, mFilter, recorder);
+				mIpIPRankingService, mFilter, asyncLocker);
 			mHttpDnsConfig.setNetworkDetector(HttpDnsNetworkDetector.getInstance());
 
 			beforeInit();
@@ -114,9 +112,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			this.mHttpDnsConfig.setTimeout(config.getTimeout());
 			this.mHttpDnsConfig.setHTTPSRequestEnabled(config.isEnableHttps());
 			// 再设置一些可以提前，没有副作用的内容
-			setExpiredIPEnabled(config.isEnableExpiredIp());
+			mResolveHostService.setEnableExpiredIp(config.isEnableExpiredIp());
 			if (config.getIPRankingList() != null) {
-				setIPRankingList(config.getIPRankingList());
+				mIpIPRankingService.setIPRankingList(config.getIPRankingList());
 			}
 			// 设置region 必须在 读取缓存之前
 			if (config.getRegion() != InitConfig.NOT_SET) {
@@ -125,8 +123,21 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			// 设置 主站域名 需要在 读取缓存之前
 			this.mResultRepo.setHostListWhichIpFixed(config.getHostListWithFixedIp());
 			// 设置缓存控制，并读取缓存
-			setCachedIPEnabled(config.isEnableCacheIp());
+			mResultRepo.setCachedIPEnabled(config.isEnableCacheIp(), Constants.DEFAULT_ENABLE_AUTO_CLEAN_CACHE_AFTER_LOAD);
 			this.mResultRepo.setCacheTtlChanger(config.getCacheTtlChanger());
+			resolveAfterNetworkChange = config.isResolveAfterNetworkChange();
+
+			if (config.getDegradationFilter() != null) {
+				mFilter.setFilter(config.getDegradationFilter());
+			}
+
+			if (config.getNotUseHttpDnsFilter() != null) {
+				mFilter.setFilter(config.getNotUseHttpDnsFilter());
+			}
+
+			mCrashDefendEnabled = config.isEnableCrashDefend();
+
+			mRequestHandler.setSdnsGlobalParams(config.getSdnsGlobalParams());
 		}
 
 	}
@@ -184,15 +195,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	}
 
 	@Override
-	public void setLogEnabled(boolean shouldPrintLog) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		HttpDnsLog.enable(shouldPrintLog);
-	}
-
-	@Override
-	public void setPreResolveHosts(ArrayList<String> hostList) {
+	public void setPreResolveHosts(List<String> hostList) {
 		if (!mHttpDnsConfig.isEnabled()) {
 			HttpDnsLog.i("service is disabled");
 			return;
@@ -205,7 +208,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	}
 
 	@Override
-	public void setPreResolveHosts(ArrayList<String> hostList, RequestIpType requestIpType) {
+	public void setPreResolveHosts(List<String> hostList, RequestIpType requestIpType) {
 		if (!mHttpDnsConfig.isEnabled()) {
 			HttpDnsLog.i("service is disabled");
 			return;
@@ -274,7 +277,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v4, null, null).getIps();
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, null).getIps();
 	}
 
 	@Override
@@ -291,7 +294,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v4, null, null).getIps();
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, null).getIps();
 	}
 
 	@Override
@@ -308,7 +311,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v6, null, null)
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, null)
 			.getIpv6s();
 	}
 
@@ -326,7 +329,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v6, null, null)
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, null)
 			.getIpv6s();
 	}
 
@@ -344,7 +347,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.both, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, null);
 	}
 
 	@Override
@@ -361,7 +364,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.both, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, null);
 	}
 
 	@Override
@@ -379,7 +382,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostAsync(host, type, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
 	}
 
 	@Override
@@ -397,31 +400,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostAsync(host, type, null, null);
-	}
-
-	@Override
-	public void setExpiredIPEnabled(boolean enable) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		mResolveHostService.setEnableExpiredIp(enable);
-	}
-
-	@Override
-	public void setCachedIPEnabled(boolean enable) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		setCachedIPEnabled(enable, false);
-	}
-
-	@Override
-	public void setCachedIPEnabled(boolean enable, boolean autoCleanCacheAfterLoad) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		mResultRepo.setCachedIPEnabled(enable, autoCleanCacheAfterLoad);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
 	}
 
 	@Override
@@ -433,67 +412,8 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	}
 
 	@Override
-	public void setDegradationFilter(DegradationFilter filter) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		this.mFilter.setFilter(filter);
-	}
-
-	@Override
-	public void setPreResolveAfterNetworkChanged(boolean enable) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		this.resolveAfterNetworkChange = enable;
-	}
-
-	@Override
-	public void setTimeoutInterval(int timeoutInterval) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		this.mHttpDnsConfig.setTimeout(timeoutInterval);
-	}
-
-	@Override
-	public void setHTTPSRequestEnabled(boolean enabled) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		boolean changed = mHttpDnsConfig.setHTTPSRequestEnabled(enabled);
-		if (changed && enabled) {
-			// 避免应用禁止http请求，导致初始化时的服务更新请求失败
-			if (mHttpDnsConfig.getCurrentServer().shouldUpdateServerIp()) {
-				mScheduleService.updateRegionServerIps();
-			}
-		}
-	}
-
-	@Override
-	public void setIPProbeList(List<IPRankingBean> ipProbeList) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		mIpIPRankingService.setIPRankingList(ipProbeList);
-	}
-
-	@Override
-	public void setIPRankingList(List<IPRankingBean> ipRankingList) {
-		if (!mHttpDnsConfig.isEnabled()) {
-			return;
-		}
-		mIpIPRankingService.setIPRankingList(ipRankingList);
-	}
-
-	@Override
 	public String getSessionId() {
 		return SessionTrackMgr.getInstance().getSessionId();
-	}
-
-	@Override
-	public void setLogger(ILogger logger) {
-		HttpDnsLog.setLogger(logger);
 	}
 
 	@Override
@@ -511,7 +431,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v4, params, cacheKey);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, params, cacheKey);
 	}
 
 	@Override
@@ -529,7 +449,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostAsync(host, RequestIpType.v4, params, cacheKey);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, params, cacheKey);
 	}
 
 	@Override
@@ -548,7 +468,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostAsync(host, type, params, cacheKey);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, params, cacheKey);
 	}
 
 	@Override
@@ -567,23 +487,77 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostAsync(host, type, params, cacheKey);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, params, cacheKey);
 	}
 
 	@Override
-	public void setSdnsGlobalParams(Map<String, String> params) {
+	public HTTPDNSResult getHttpDnsResultForHostSync(String host, RequestIpType type, Map<String, String> params, String cacheKey) {
 		if (!mHttpDnsConfig.isEnabled()) {
-			return;
+			HttpDnsLog.i("service is disabled");
+			return Constants.EMPTY;
 		}
-		mRequestHandler.setSdnsGlobalParams(params);
+		if (!CommonUtil.isAHost(host)) {
+			HttpDnsLog.i("host is invalid. " + host);
+			return Constants.EMPTY;
+		}
+		if (CommonUtil.isAnIP(host)) {
+			HttpDnsLog.i("host is ip. " + host);
+			return Constants.EMPTY;
+		}
+		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
+		if (Looper.getMainLooper() == Looper.myLooper()) {
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("request in main thread, use async request");
+			}
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+		}
+		return mResolveHostService.resolveHostSync(host, type, params, cacheKey);
 	}
 
 	@Override
-	public void clearSdnsGlobalParams() {
+	public void getHttpDnsResultForHostAsync(String host, RequestIpType type, Map<String, String> params, String cacheKey, HttpDnsCallback callback) {
 		if (!mHttpDnsConfig.isEnabled()) {
+			HttpDnsLog.i("service is disabled");
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
 			return;
 		}
-		mRequestHandler.clearSdnsGlobalParams();
+		if (!CommonUtil.isAHost(host)) {
+			HttpDnsLog.i("host is invalid. " + host);
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
+			return;
+		}
+		if (CommonUtil.isAnIP(host)) {
+			HttpDnsLog.i("host is ip. " + host);
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
+			return;
+		}
+
+		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
+		mResolveHostService.resolveHostAsync(host, type, params, cacheKey, callback);
+	}
+
+	@Override
+	public HTTPDNSResult getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type, Map<String, String> params, String cacheKey) {
+		if (!mHttpDnsConfig.isEnabled()) {
+			HttpDnsLog.i("service is disabled");
+			return Constants.EMPTY;
+		}
+		if (!CommonUtil.isAHost(host)) {
+			HttpDnsLog.i("host is invalid. " + host);
+			return Constants.EMPTY;
+		}
+		if (CommonUtil.isAnIP(host)) {
+			HttpDnsLog.i("host is ip. " + host);
+			return Constants.EMPTY;
+		}
+		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, params, cacheKey);
 	}
 
 	@Override
@@ -717,7 +691,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("request in main thread, use async request");
 			}
-			return mResolveHostService.resolveHostAsync(host, type, null, null);
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
 		}
 		return mResolveHostService.resolveHostSync(host, type, null, null);
 	}
@@ -750,11 +724,6 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 		}
 	}
 
-    @Override
-    public void enableCrashDefend(boolean enabled) {
-        mCrashDefendEnabled = enabled;
-    }
-
 	@Override
 	public HTTPDNSResult getHttpDnsResultForHostSync(String host, RequestIpType type) {
 		if (!mHttpDnsConfig.isEnabled()) {
@@ -774,8 +743,55 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("request in main thread, use async request");
 			}
-			return mResolveHostService.resolveHostAsync(host, type, null, null);
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
 		}
 		return mResolveHostService.resolveHostSync(host, type, null, null);
+	}
+
+	@Override
+	public void getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback) {
+		if (!mHttpDnsConfig.isEnabled()) {
+			HttpDnsLog.i("service is disabled");
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
+			return;
+		}
+		if (!CommonUtil.isAHost(host)) {
+			HttpDnsLog.i("host is invalid. " + host);
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
+			return;
+		}
+		if (CommonUtil.isAnIP(host)) {
+			HttpDnsLog.i("host is ip. " + host);
+			if (callback != null) {
+				callback.onHttpDnsCompleted(Constants.EMPTY);
+			}
+			return;
+		}
+
+		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
+
+		mResolveHostService.resolveHostAsync(host, type, null, null, callback);
+	}
+
+	@Override
+	public HTTPDNSResult getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type) {
+		if (!mHttpDnsConfig.isEnabled()) {
+			HttpDnsLog.i("service is disabled");
+			return Constants.EMPTY;
+		}
+		if (!CommonUtil.isAHost(host)) {
+			HttpDnsLog.i("host is invalid. " + host);
+			return Constants.EMPTY;
+		}
+		if (CommonUtil.isAnIP(host)) {
+			HttpDnsLog.i("host is ip. " + host);
+			return Constants.EMPTY;
+		}
+		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
 	}
 }

@@ -38,7 +38,7 @@ public class NormalResolveCategory implements ResolveHostCategory {
 		// 重试一次
 		request = new RetryHttpRequest<>(request, 1);
 		try {
-			config.getWorker().execute(new HttpRequestTask<>(request, callback));
+			config.getResolveWorker().execute(new HttpRequestTask<>(request, callback));
 		} catch (Throwable e) {
 			callback.onFail(e);
 		}

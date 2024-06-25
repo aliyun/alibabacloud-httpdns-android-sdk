@@ -30,8 +30,10 @@ class ListAdapter(private val context: Context,
         holder.setItemValue(itemList[position]) {
             when (itemList[holder.adapterPosition].type) {
                 kListItemTypeHostWithFixedIP -> deleteListener.onHostWithFixedIPDeleted(holder.adapterPosition)
+                kListItemTypeBlackList -> deleteListener.onHostBlackListDeleted(holder.adapterPosition)
                 kListItemTypeCacheTtl -> deleteListener.onTtlDeleted(itemList[holder.adapterPosition].content)
-                kListItemPreResolve -> deleteListener.onPreResolveDeleted(holder.adapterPosition)
+                kListItemPreResolve -> deleteListener.onPreResolveDeleted(itemList[holder.adapterPosition].content, itemList[holder.adapterPosition].intValue)
+                kListItemBatchResolve -> deleteListener.onBatchResolveDeleted(itemList[holder.adapterPosition].content, itemList[holder.adapterPosition].intValue)
                 else -> deleteListener.onIPRankingItemDeleted(holder.adapterPosition)
             }
             itemList.removeAt(holder.adapterPosition)
@@ -88,10 +90,34 @@ class ListAdapter(private val context: Context,
                     binding.hostAndPortOrTtlContainer.visibility = View.GONE
                     binding.preHostOrWithFixedIp.text = listItem.content
                 }
-                kListItemPreResolve -> {
+                kListItemTypeBlackList -> {
                     binding.hostFixedIpContainer.visibility = View.VISIBLE
                     binding.hostAndPortOrTtlContainer.visibility = View.GONE
                     binding.preHostOrWithFixedIp.text = listItem.content
+                }
+                kListItemPreResolve -> {
+                    binding.hostFixedIpContainer.visibility = View.GONE
+                    binding.hostAndPortOrTtlContainer.visibility = View.VISIBLE
+                    binding.hostValue.text = listItem.content
+                    binding.portOrTtlValue.text = when (listItem.intValue) {
+                        0 -> "IPv4"
+                        1 -> "IPv6"
+                        2 -> "IPv4&IPv6"
+                        else -> "自动判断IP类型"
+                    }
+                    binding.portOrTtlIndicate.text = context.getString(R.string.ip_type)
+                }
+                kListItemBatchResolve -> {
+                    binding.hostFixedIpContainer.visibility = View.GONE
+                    binding.hostAndPortOrTtlContainer.visibility = View.VISIBLE
+                    binding.hostValue.text = listItem.content
+                    binding.portOrTtlValue.text = when (listItem.intValue) {
+                        0 -> "IPv4"
+                        1 -> "IPv6"
+                        2 -> "IPv4&IPv6"
+                        else -> "自动判断IP类型"
+                    }
+                    binding.portOrTtlIndicate.text = context.getString(R.string.ip_type)
                 }
             }
 
@@ -107,6 +133,10 @@ class ListAdapter(private val context: Context,
 
         fun onTtlDeleted(host: String)
 
-        fun onPreResolveDeleted(position: Int)
+        fun onPreResolveDeleted(host: String, intValue: Int)
+
+        fun onHostBlackListDeleted(position: Int)
+
+        fun onBatchResolveDeleted(host: String, intValue: Int)
     }
 }

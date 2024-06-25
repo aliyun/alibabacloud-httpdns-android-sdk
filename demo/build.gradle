@@ -5,17 +5,17 @@ plugins {
 }
 
 gradle.ext {
-    httpVersion = '2.3.3'
+    httpVersion = '2.3.4'
 }
 
 android {
     namespace 'com.aliyun.ams.httpdns.demo'
-    compileSdkVersion 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.aliyun.ams.httpdns.demo"
         minSdkVersion 26
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
 
@@ -34,7 +34,7 @@ android {
         }
 
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
@@ -110,14 +110,16 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
 //    implementation project(path: ':httpdns-sdk')
-    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.3.3'
+    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.4.1'
 
     implementation('com.alibaba:fastjson:1.1.73.android@jar')
+//    implementation('com.emas.hybrid:emas-hybrid-android:1.1.0.4-public-SNAPSHOT') {
+//        exclude group: 'com.android.support', module: 'appcompat-v7'
+//        exclude group: 'com.taobao.android', module: 'thin_so_release'
+//    }
 
-    implementation('com.emas.hybrid:emas-hybrid-android:1.1.0.3-public') {
-        exclude group: 'com.android.support', module: 'appcompat-v7'
-        exclude group: 'com.taobao.android', module: 'thin_so_release'
-    }
+    implementation 'com.aliyun.ams:alicloud-android-tool:1.1.0'
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

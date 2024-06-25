@@ -2,14 +2,14 @@ package com.alibaba.ams.emas.demo.ui.resolve
 
 import android.app.Application
 import android.util.Log
-import android.widget.CompoundButton
 import android.widget.RadioGroup
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.alibaba.ams.emas.demo.HttpDnsApplication
 import com.alibaba.ams.emas.demo.SingleLiveData
-import com.alibaba.ams.emas.demo.constant.KEY_ASYNC_RESOLVE
 import com.alibaba.ams.emas.demo.constant.KEY_RESOLVE_IP_TYPE
+import com.alibaba.ams.emas.demo.constant.KEY_RESOLVE_METHOD
+import com.alibaba.ams.emas.demo.constant.KEY_SDNS_RESOLVE
 import com.alibaba.ams.emas.demo.getAccountPreference
 import com.alibaba.ams.emas.demo.net.HttpURLConnectionRequest
 import com.alibaba.ams.emas.demo.net.OkHttpRequest
@@ -24,12 +24,20 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
 
     private val preferences = getAccountPreference(getApplication())
 
-    val asyncResolve = SingleLiveData<Boolean>().apply {
-        value = true
-    }
-
     val currentIpType = SingleLiveData<String>().apply {
         value = "IPv4"
+    }
+
+    val requestNum = SingleLiveData<Int>().apply {
+        value = 1
+    }
+
+    val currentResolveMethod = SingleLiveData<String>().apply {
+        value = "getHttpDnsResultForHostSync(String host, RequestIpType type)"
+    }
+
+    val isSdns = SingleLiveData<Boolean>().apply {
+        value = false
     }
 
     var showDialog:IResolveShowDialog? = null
@@ -38,13 +46,15 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
     private var schemaType: SchemaType = SchemaType.HTTPS
 
     fun initData() {
-        asyncResolve.value = preferences.getBoolean(KEY_ASYNC_RESOLVE, true)
+        isSdns.value = preferences.getBoolean(KEY_SDNS_RESOLVE, false)
         val ipType = preferences.getString(KEY_RESOLVE_IP_TYPE, "IPv4")
         currentIpType.value = when(ipType) {
             "Auto" -> getApplication<HttpDnsApplication>().getString(R.string.auto_get_ip_type)
             else -> ipType
         }
 
+        currentResolveMethod.value = preferences.getString(KEY_RESOLVE_METHOD, "getHttpDnsResultForHostSync(String host, RequestIpType type)")
+        requestNum.value = 1
     }
 
     fun onNetRequestTypeChanged(radioGroup: RadioGroup, id: Int) {
@@ -54,14 +64,13 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun toggleEnableAsync(button: CompoundButton, checked: Boolean) {
-        asyncResolve.value = checked
+    fun toggleSdns(checked: Boolean) {
+        isSdns.value = checked
         viewModelScope.launch {
             val editor = preferences.edit()
-            editor.putBoolean(KEY_ASYNC_RESOLVE, checked)
+            editor.putBoolean(KEY_SDNS_RESOLVE, checked)
             editor.apply()
         }
-
     }
 
     fun onSchemaTypeChanged(radioGroup: RadioGroup, id: Int) {
@@ -73,6 +82,14 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
 
     fun setResolveIpType() {
         showDialog?.showSelectResolveIpTypeDialog()
+    }
+
+    fun setResolveMethod() {
+        showDialog?.showResolveMethodDialog()
+    }
+
+    fun setRequestNumber() {
+        showDialog?.showRequestNumberDialog()
     }
 
     fun saveResolveIpType(ipType: String) {
@@ -87,7 +104,21 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun startToResolve(host: String, api: String) {
+    fun saveResolveMethod(resolveMethod: String) {
+        viewModelScope.launch {
+            val editor = preferences.edit()
+            editor.putString(KEY_RESOLVE_METHOD, resolveMethod)
+            editor.apply()
+        }
+
+        currentResolveMethod.value = resolveMethod
+    }
+
+    fun saveRequestNumber(num: Int) {
+        requestNum.value = num
+    }
+
+    fun startToResolve(host: String, api: String, sdnsParams: Map<String, String>?, cacheKey: String) {
         val requestUrl = if (schemaType == SchemaType.HTTPS) "https://$host$api" else "http://$host$api"
         val requestIpType = when (currentIpType.value) {
             "IPv4" -> RequestIpType.v4
@@ -95,12 +126,11 @@ class ResolveViewModel(application: Application) : AndroidViewModel(application)
             "IPv4&IPv6" -> RequestIpType.both
             else -> RequestIpType.auto
         }
-        Log.d("httpdns", "requestIp: $requestIpType")
+        Log.d("httpdns", "api: ${currentResolveMethod.value}, " + "requestIp: $requestIpType")
 
         val requestClient = if (requestType == NetRequestType.OKHTTP) OkHttpRequest(getApplication(), requestIpType,
-            asyncResolve.value!!
-        ) else HttpURLConnectionRequest(getApplication(), requestIpType,
-            asyncResolve.value!!)
+            currentResolveMethod.value!!, isSdns.value!!, sdnsParams, cacheKey
+        ) else HttpURLConnectionRequest(getApplication(), requestIpType, currentResolveMethod.value!!, isSdns.value!!, sdnsParams, cacheKey)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {

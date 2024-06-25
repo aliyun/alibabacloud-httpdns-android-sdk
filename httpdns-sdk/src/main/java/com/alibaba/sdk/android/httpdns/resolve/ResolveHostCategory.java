@@ -10,6 +10,9 @@ import com.alibaba.sdk.android.httpdns.request.RequestCallback;
 public interface ResolveHostCategory {
 	/**
 	 * 解析域名
+	 * @param config {@link HttpDnsConfig}
+	 * @param requestConfig {@link  HttpRequestConfig}
+	 * @param callback {@link RequestCallback<ResolveHostResponse>}
 	 */
 	void resolve(HttpDnsConfig config, HttpRequestConfig requestConfig,
 				 RequestCallback<ResolveHostResponse> callback);

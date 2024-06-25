@@ -9,10 +9,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.alibaba.ams.emas.demo.constant.KEY_RESOLVE_IP_TYPE
+import com.alibaba.ams.emas.demo.constant.KEY_RESOLVE_METHOD
 import com.alibaba.ams.emas.demo.getAccountPreference
-import com.alibaba.sdk.android.httpdns.utils.CommonUtil
 import com.aliyun.ams.httpdns.demo.R
 import com.aliyun.ams.httpdns.demo.databinding.FragmentResolveBinding
+import org.json.JSONException
+import org.json.JSONObject
 
 
 class ResolveFragment : Fragment(), IResolveShowDialog {
@@ -38,6 +40,31 @@ class ResolveFragment : Fragment(), IResolveShowDialog {
         viewModel.initData()
         binding.lifecycleOwner = this
         binding.viewModel = viewModel
+        binding.sdnsParamsInputLayout.visibility = if (viewModel.isSdns.value!!) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        binding.sdnsCacheKeyInputLayout.visibility = if (viewModel.isSdns.value!!) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+
+        binding.enableSdnsResolve.setOnCheckedChangeListener{_, isChecked ->
+            viewModel.toggleSdns(isChecked)
+
+            binding.sdnsParamsInputLayout.visibility = if (viewModel.isSdns.value!!) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+            binding.sdnsCacheKeyInputLayout.visibility = if (viewModel.isSdns.value!!) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+        }
 
         binding.startResolve.setOnClickListener {
             binding.resolveHostInputLayout.error = ""
@@ -47,22 +74,36 @@ class ResolveFragment : Fragment(), IResolveShowDialog {
                 binding.resolveHostInputLayout.error = getString(R.string.resolve_host_empty)
                 return@setOnClickListener
             }
-            //2. 域名是否正确
-            if (!CommonUtil.isAHost(host)) {
-                binding.resolveHostInputLayout.error = getString(R.string.host_illegal)
-                return@setOnClickListener
-            }
-            //3. 域名不能是ip
-            if (CommonUtil.isAnIP(host)) {
-                binding.resolveHostInputLayout.error = getString(R.string.host_is_ip)
-                return@setOnClickListener
+            var sdnsParams: MutableMap<String, String>? = null
+            //2. 校验sdns参数
+            if (viewModel.isSdns.value!!) {
+                val sdnsParamsStr = binding.sdnsParamsInputLayout.editText?.text.toString()
+                if (!TextUtils.isEmpty(sdnsParamsStr)) {
+                    try {
+                        val sdnsJson = JSONObject(sdnsParamsStr)
+                        val keys = sdnsJson.keys()
+                        sdnsParams = HashMap()
+                        while (keys.hasNext()) {
+                            val key = keys.next()
+                            sdnsParams[key] = sdnsJson.getString(key)
+                        }
+                    } catch (e: JSONException) {
+                        binding.sdnsParamsInputLayout.error = getString(R.string.input_the_sdns_params_error)
+                    }
+                }
             }
 
             var api = binding.requestApiInputLayout.editText?.text.toString()
+
+            val cacheKey = binding.sdnsCacheKeyInputLayout.editText?.text.toString()
             if (!api.startsWith("/")) {
                 api = "/$api"
             }
-            viewModel.startToResolve(host, api)
+            var index: Int = 0
+            do {
+                viewModel.startToResolve(host, api, sdnsParams, cacheKey)
+                ++index
+            } while (index < viewModel.requestNum.value!!)
         }
 
         return binding.root
@@ -128,6 +169,63 @@ class ResolveFragment : Fragment(), IResolveShowDialog {
             setTitle(R.string.response_title)
             setMessage(getString(R.string.request_exception, e.message))
             setPositiveButton(R.string.ok) { dialog, _ -> dialog.dismiss() }
+        }
+        builder?.show()
+    }
+
+    override fun showResolveMethodDialog() {
+        val builder = activity?.let { act -> AlertDialog.Builder(act) }
+        builder?.apply {
+            setTitle(R.string.select_resolve_method)
+            val items = arrayOf("同步方法", "异步方法", "同步非阻塞方法")
+            val preferences = activity?.let { getAccountPreference(it) }
+
+            var resolvedMethod = preferences?.getString(KEY_RESOLVE_METHOD, "getHttpDnsResultForHostSync(String host, RequestIpType type)").toString()
+            val index = when (resolvedMethod) {
+                "getHttpDnsResultForHostSync(String host, RequestIpType type)" -> 0
+                "getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback)" -> 1
+                "getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type)" -> 2
+                else -> 3
+            }
+            setSingleChoiceItems(items, index) { _, which ->
+                resolvedMethod = when (which) {
+                    0 -> "getHttpDnsResultForHostSync(String host, RequestIpType type)"
+                    1 -> "getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback)"
+                    2 -> "getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type)"
+                    else -> "getHttpDnsResultForHostSync(String host, RequestIpType type)"
+                }
+            }
+
+            setPositiveButton(getString(R.string.confirm)) { dialog, _ ->
+                viewModel.saveResolveMethod(resolvedMethod)
+                dialog.dismiss()
+            }
+            setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
+        }
+        builder?.show()
+    }
+
+    override fun showRequestNumberDialog() {
+        val builder = activity?.let { act -> AlertDialog.Builder(act) }
+        builder?.apply {
+            setTitle(R.string.select_request_num)
+            val items = arrayOf("1", "2", "3", "4", "5")
+
+            val index = viewModel.requestNum.value!! - 1
+            var num = viewModel.requestNum.value
+            setSingleChoiceItems(items, index) { _, which ->
+                num = which + 1
+            }
+
+            setPositiveButton(getString(R.string.confirm)) { dialog, _ ->
+                viewModel.saveRequestNumber(num!!)
+                dialog.dismiss()
+            }
+            setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
         }
         builder?.show()
     }

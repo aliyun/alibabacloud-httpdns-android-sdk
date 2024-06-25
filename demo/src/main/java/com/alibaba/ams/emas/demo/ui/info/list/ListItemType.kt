@@ -12,3 +12,7 @@ const val kListItemTypeCacheTtl = 0x02
 const val kListItemTypeHostWithFixedIP = 0x03
 
 const val kListItemPreResolve = 0x04
+
+const val kListItemTypeBlackList = 0x05
+
+const val kListItemBatchResolve = 0x06

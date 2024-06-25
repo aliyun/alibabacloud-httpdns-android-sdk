@@ -10,4 +10,8 @@ interface IResolveShowDialog {
     fun showRequestResultDialog(response: Response)
 
     fun showRequestFailedDialog(e: Throwable)
+
+    fun showResolveMethodDialog()
+
+    fun showRequestNumberDialog()
 }

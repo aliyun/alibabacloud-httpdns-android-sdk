@@ -5,18 +5,17 @@ import android.util.Log
 import com.alibaba.ams.emas.demo.HttpDnsServiceHolder
 import com.alibaba.ams.emas.demo.readStringFrom
 import com.alibaba.ams.emas.demo.ui.resolve.Response
-import com.alibaba.sdk.android.httpdns.HttpDns
+import com.alibaba.sdk.android.httpdns.HTTPDNSResult
+import com.alibaba.sdk.android.httpdns.HttpDnsCallback
 import com.alibaba.sdk.android.httpdns.NetType
 import com.alibaba.sdk.android.httpdns.RequestIpType
-import com.alibaba.sdk.android.httpdns.SyncService
 import com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector
-import com.aliyun.ams.httpdns.demo.BuildConfig
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.CountDownLatch
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 
@@ -24,7 +23,8 @@ import javax.net.ssl.HttpsURLConnection
  * @author allen.wy
  * @date 2023/5/26
  */
-class HttpURLConnectionRequest(private val context: Context, private val requestIpType: RequestIpType, private val async: Boolean): IRequest {
+class HttpURLConnectionRequest(private val context: Context, private val requestIpType: RequestIpType, private val resolveMethod: String,
+                               private val isSdns: Boolean, private val sdnsParams: Map<String, String>?, private val cacheKey: String): IRequest {
 
     override fun get(url: String): Response {
         val conn: HttpURLConnection = getConnection(url)
@@ -53,10 +53,36 @@ class HttpURLConnectionRequest(private val context: Context, private val request
         var ipURL: String? = null
         dnsService?.let {
             //替换为最新的api
-            val httpDnsResult =
-                if (async) dnsService.getHttpDnsResultForHostAsync(host, requestIpType) else
+            var httpDnsResult = HTTPDNSResult("", null, null, null, false, false)
+            if (resolveMethod == "getHttpDnsResultForHostSync(String host, RequestIpType type)") {
+                httpDnsResult = if (isSdns) {
+                    dnsService.getHttpDnsResultForHostSync(host, requestIpType, sdnsParams, cacheKey)
+                } else {
                     dnsService.getHttpDnsResultForHostSync(host, requestIpType)
-            Log.d("httpdns", "$host 解析结果 $httpDnsResult")
+                }
+            } else if (resolveMethod == "getHttpDnsResultForHostAsync(String host, RequestIpType type, HttpDnsCallback callback)") {
+                val lock = CountDownLatch(1)
+                if (isSdns) {
+                    dnsService.getHttpDnsResultForHostAsync(host, requestIpType, sdnsParams, cacheKey, HttpDnsCallback {
+                        httpDnsResult = it
+                        lock.countDown()
+                    })
+                } else {
+                    dnsService.getHttpDnsResultForHostAsync(host, requestIpType, HttpDnsCallback {
+                        httpDnsResult = it
+                        lock.countDown()
+                    })
+                }
+                lock.await()
+            } else if (resolveMethod == "getHttpDnsResultForHostSyncNonBlocking(String host, RequestIpType type)") {
+                httpDnsResult = if (isSdns) {
+                    dnsService.getHttpDnsResultForHostSyncNonBlocking(host, requestIpType, sdnsParams, cacheKey)
+                } else {
+                    dnsService.getHttpDnsResultForHostSyncNonBlocking(host, requestIpType)
+                }
+            }
+
+            Log.d("httpdns", "httpdns $host 解析结果 $httpDnsResult")
             val ipStackType = HttpDnsNetworkDetector.getInstance().getNetType(context)
             val isV6 = ipStackType == NetType.v6 || ipStackType == NetType.both
             val isV4 = ipStackType == NetType.v4 || ipStackType == NetType.both
@@ -107,6 +133,5 @@ class HttpURLConnectionRequest(private val context: Context, private val request
     private fun needRedirect(code: Int): Boolean {
         return code in 300..399
     }
-
 
 }

@@ -50,6 +50,11 @@ public class ResolveHostResultRepo {
 			ResolveHostCache cache = mCacheGroup.getCache(record.getCacheKey());
 			cache.put(record);
 		}
+
+		if (HttpDnsLog.isPrint()) {
+			HttpDnsLog.d("cache ready");
+		}
+
 		if (cleanCache) {
 			mDBHelper.delete(records);
 		} else {
@@ -89,7 +94,7 @@ public class ResolveHostResultRepo {
 		}
 
 		if (HttpDnsLog.isPrint()) {
-			HttpDnsLog.d("save host " + host + " ttl is " + ttl);
+			HttpDnsLog.d("save host " + host + " for type " + type.name() + " ttl is " + ttl);
 		}
 
 		ResolveHostCache cache = mCacheGroup.getCache(cacheKey);

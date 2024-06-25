@@ -28,6 +28,9 @@
     <string name="ip_probe_list">探测IP列表</string>
     <string name="ttl_cache_list">自定义TTL缓存列表</string>
     <string name="host_fixed_ip_list">主站域名列表</string>
+    <string name="host_black_list">域名黑名单列表</string>
+    <string name="sdns_global_params">自定义解析全局参数</string>
+    <string name="batch_resolve">批量解析域名</string>
 
     <string name="httpdns_sdk_version">HttpDNS版本号</string>
     <string name="unknown">未知</string>
@@ -36,14 +39,23 @@
     <string name="clear_cache_hint">请输入要清空缓存的域名</string>
     <string name="network_request_type">网络请求类型</string>
     <string name="async_resolve">异步解析获取IP</string>
+    <string name="sdns_resolve">自定义域名解析</string>
     <string name="ip_type">要解析的IP类型</string>
+    <string name="resolve_method">使用的解析方法</string>
+    <string name="request_num">并发请求次数</string>
 
     <string name="select_resolve_ip_type">选择IP类型</string>
+    <string name="select_resolve_method">选择解析方法</string>
+    <string name="select_request_num">选择并发请求次数</string>
     <string name="auto_get_ip_type">自动判断IP类型</string>
     <string name="add_pre_resolve">添加预解析域名</string>
     <string name="add_pre_resolve_hint">请输入要预解析的域名</string>
     <string name="pre_resolve_list">预解析域名列表</string>
     <string name="pre_resolve_host_duplicate">%s域名已经被添加至预解析列表，请勿重复添加</string>
+    <string name="batch_resolve_list">批量解析域名列表</string>
+    <string name="add_batch_resolve_hint">请输入要批量解析的域名</string>
+    <string name="add_batch_resolve">请输入要批量解析的域名</string>
+    <string name="batch_resolve_host_duplicate">%s域名已经被添加至批量解析列表，请勿重复添加</string>
 
     <string name="host">域名：</string>
     <string name="port">端口：</string>
@@ -54,6 +66,11 @@
     <string name="host_fixed_ip_empty">主站域名为空</string>
     <string name="host_fixed_ip_duplicate">%s主站域名已经被添加，请勿重复添加</string>
 
+    <string name="add_host_to_black_list_hint">请输入不使用HttpDns解析的域名</string>
+    <string name="add_host_to_black_list">添加不使用HttpDns的域名</string>
+    <string name="host_to_black_list_empty">域名为空</string>
+    <string name="host_black_list_duplicate">%s域名已经在黑名单中，请勿重复添加</string>
+
     <string name="add_ip_probe_host_hint">请输入探测IP的域名</string>
     <string name="add_ip_probe_port_hint">请输入探测IP的端口</string>
     <string name="add_ip_probe">添加IP探测</string>
@@ -62,6 +79,7 @@
 
     <string name="host_is_empty">域名为空</string>
     <string name="pre_resolve_host_is_empty">预解析的域名为空</string>
+    <string name="batch_resolve_host_is_empty">批量解析的域名为空</string>
 
     <string name="add_ttl_host_hint">请输入缓存的域名</string>
     <string name="add_ttl_ttl_hint">请输入缓存的ttl时间，单位：秒</string>
@@ -72,6 +90,13 @@
     <string name="delete">删除</string>
     <string name="clear_all_cache">清除所有HttpDNS配置缓存</string>
     <string name="all_cache_cleared">所有HttpDNS配置缓存都已清除</string>
+
+    <string name="input_the_sdns_params">自定义解析的参数</string>
+    <string name="input_the_sdns_params_help_text">json对象格式</string>
+    <string name="input_the_sdns_params_error">自定义解析的参数必须是json对象</string>
+
+    <string name="input_the_sdns_cache_key">自定义解析的cache key</string>
+    <string name="input_the_sdns_cache_key_help_text">Cache key用于唯一标识缓存中的解析结果</string>
 
     <string name="input_the_resolve_host">要解析的域名</string>
     <string name="input_the_resolve_host_help_text">例如：help.aliyun.com</string>

@@ -59,9 +59,26 @@ class InfoFragment : Fragment() {
             startActivity(intent)
         }
 
+        binding.jumpToHostBlackList.setOnClickListener {
+            val intent = Intent(activity, ListActivity::class.java)
+            intent.putExtra("list_type", kListItemTypeBlackList)
+            startActivity(intent)
+        }
+
         binding.jumpToTtlCache.setOnClickListener {
             val intent = Intent(activity, ListActivity::class.java)
             intent.putExtra("list_type", kListItemTypeCacheTtl)
+            startActivity(intent)
+        }
+
+        binding.jumpToSdnsGlobalParams.setOnClickListener {
+            val intent = Intent(activity, SdnsGlobalSettingActivity::class.java)
+            startActivity(intent)
+        }
+
+        binding.jumpToBatchResolve.setOnClickListener {
+            val intent = Intent(activity, ListActivity::class.java)
+            intent.putExtra("list_type", kListItemBatchResolve)
             startActivity(intent)
         }
 

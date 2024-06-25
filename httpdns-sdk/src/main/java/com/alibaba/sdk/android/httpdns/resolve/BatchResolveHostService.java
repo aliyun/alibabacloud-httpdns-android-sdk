@@ -2,7 +2,7 @@ package com.alibaba.sdk.android.httpdns.resolve;
 
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
-import com.alibaba.sdk.android.httpdns.impl.HostResolveRecorder;
+import com.alibaba.sdk.android.httpdns.impl.HostResolveLocker;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingCallback;
@@ -12,6 +12,7 @@ import com.alibaba.sdk.android.httpdns.request.RequestCallback;
 import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 批量解析域名
@@ -25,18 +26,18 @@ public class BatchResolveHostService {
 	private final ResolveHostRequestHandler mRequestHandler;
 	private final IPRankingService mIpIPRankingService;
 	private final HostFilter mHostFilter;
-	private final HostResolveRecorder mRecorder;
+	private final HostResolveLocker mAsyncLocker;
 
 	public BatchResolveHostService(HttpDnsConfig config, ResolveHostResultRepo repo,
 								   ResolveHostRequestHandler requestHandler,
 								   IPRankingService ipIPRankingService, HostFilter filter,
-								   HostResolveRecorder recorder) {
+								   HostResolveLocker locker) {
 		this.mHttpDnsConfig = config;
 		this.mResultRepo = repo;
 		this.mRequestHandler = requestHandler;
 		this.mIpIPRankingService = ipIPRankingService;
 		this.mHostFilter = filter;
-		this.mRecorder = recorder;
+		this.mAsyncLocker = locker;
 	}
 
 	/**
@@ -45,9 +46,9 @@ public class BatchResolveHostService {
 	 * @param hostList
 	 * @param type
 	 */
-	public void batchResolveHostAsync(final ArrayList<String> hostList, final RequestIpType type) {
+	public void batchResolveHostAsync(final List<String> hostList, final RequestIpType type) {
 		if (HttpDnsLog.isPrint()) {
-			HttpDnsLog.d("resolve host " + hostList.toString() + " " + type);
+			HttpDnsLog.d("batch resolve host " + hostList.toString() + " " + type);
 		}
 
 		ArrayList<String> hostsRequestV4 = new ArrayList<>();
@@ -69,26 +70,26 @@ public class BatchResolveHostService {
 
 			if (type == RequestIpType.v4) {
 				HTTPDNSResult result = mResultRepo.getIps(host, type, null);
-				if (result == null || result.isExpired() || result.isFromDB()) {
+				if (result == null || result.isExpired()) {
 					// 需要解析
 					hostsRequestV4.add(host);
 				}
 			} else if (type == RequestIpType.v6) {
 				HTTPDNSResult result = mResultRepo.getIps(host, type, null);
-				if (result == null || result.isExpired() || result.isFromDB()) {
+				if (result == null || result.isExpired()) {
 					// 需要解析
 					hostsRequestV6.add(host);
 				}
 			} else {
 				HTTPDNSResult resultV4 = mResultRepo.getIps(host, RequestIpType.v4, null);
 				HTTPDNSResult resultV6 = mResultRepo.getIps(host, RequestIpType.v6, null);
-				if ((resultV4 == null || resultV4.isExpired() || resultV4.isFromDB()) && (
-					resultV6 == null || resultV6.isExpired() || resultV6.isFromDB())) {
+				if ((resultV4 == null || resultV4.isExpired()) && (
+					resultV6 == null || resultV6.isExpired())) {
 					// 都需要解析
 					hostsRequestBoth.add(host);
-				} else if (resultV4 == null || resultV4.isExpired() || resultV4.isFromDB()) {
+				} else if (resultV4 == null || resultV4.isExpired()) {
 					hostsRequestV4.add(host);
-				} else if (resultV6 == null || resultV6.isExpired() || resultV6.isFromDB()) {
+				} else if (resultV6 == null || resultV6.isExpired()) {
 					hostsRequestV6.add(host);
 				}
 			}
@@ -110,7 +111,7 @@ public class BatchResolveHostService {
 			final ArrayList<String> targetHost = new ArrayList<>();
 			while (targetHost.size() < maxCountPerRequest && allHosts.size() > 0) {
 				String host = allHosts.remove(0);
-				if (mRecorder.beginResolve(host, type)) {
+				if (mAsyncLocker.beginResolve(host, type, null)) {
 					targetHost.add(host);
 				} else {
 					if (HttpDnsLog.isPrint()) {
@@ -151,7 +152,7 @@ public class BatchResolveHostService {
 							}
 						}
 						for (String host : targetHost) {
-							mRecorder.endResolve(host, type);
+							mAsyncLocker.endResolve(host, type, null);
 						}
 					}
 
@@ -166,7 +167,7 @@ public class BatchResolveHostService {
 							mResultRepo.save(region, type, emptyResponse);
 						}
 						for (String host : targetHost) {
-							mRecorder.endResolve(host, type);
+							mAsyncLocker.endResolve(host, type, null);
 						}
 					}
 				});
