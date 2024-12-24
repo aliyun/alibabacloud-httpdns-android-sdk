@@ -4,6 +4,7 @@
     <string name="title_resolve">HttpDNS Resolve</string>
     <string name="title_best_practice">Best Practice</string>
     <string name="title_info">Information</string>
+    <string name="init_tip">Please init HttpDns first</string>
 
     <string name="enable_expired_ip">Enable Expired IP</string>
     <string name="enable_local_cache">Enable Cache IP</string>
@@ -16,6 +17,8 @@
     <string name="china">China</string>
     <string name="china_hk">China-HongKong</string>
     <string name="singapore">Singapore</string>
+    <string name="germany">Germany</string>
+    <string name="america">America</string>
 
     <string name="select_region">Choose Region</string>
     <string name="confirm">Confirm</string>
@@ -50,6 +53,8 @@
     <string name="add_pre_resolve_hint">Please input the domain you want to pre-resolve</string>
     <string name="pre_resolve_list">Pre-Resolve Domain List</string>
     <string name="pre_resolve_host_duplicate">The host %s is already added to pre-resolve List</string>
+    <string name="init_httpdns">Init HttpDns</string>
+    <string name="inited_httpdns">HttpDns Inited</string>
     <string name="batch_resolve_list">Batch resolve domain list</string>
     <string name="add_batch_resolve_hint">Please input the domain you want to batch resolve</string>
     <string name="add_batch_resolve">Add batch resolve domain</string>

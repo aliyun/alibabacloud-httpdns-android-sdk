@@ -1,15 +1,12 @@
 package com.alibaba.ams.emas.demo
-
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-
 object BatchResolveCacheHolder {
     var batchResolveV4List: MutableList<String> = mutableListOf()
     var batchResolveV6List: MutableList<String> = mutableListOf()
     var batchResolveBothList: MutableList<String> = mutableListOf()
     var batchResolveAutoList: MutableList<String> = mutableListOf()
-
     fun convertBatchResolveCacheData(cacheData: String?) {
         if (cacheData == null) {
             batchResolveBothList.add("www.baidu.com")
@@ -31,7 +28,6 @@ object BatchResolveCacheHolder {
             val v6Array = jsonObject.optJSONArray("v6")
             val bothArray = jsonObject.optJSONArray("both")
             val autoArray = jsonObject.optJSONArray("auto")
-
             if (v4Array != null) {
                 var length = v4Array.length()
                 --length
@@ -40,7 +36,6 @@ object BatchResolveCacheHolder {
                     --length
                 }
             }
-
             if (v6Array != null) {
                 var length = v6Array.length()
                 --length
@@ -49,7 +44,6 @@ object BatchResolveCacheHolder {
                     --length
                 }
             }
-
             if (bothArray != null) {
                 var length = bothArray.length()
                 --length
@@ -58,7 +52,6 @@ object BatchResolveCacheHolder {
                     --length
                 }
             }
-
             if (autoArray != null) {
                 var length = autoArray.length()
                 --length
@@ -71,7 +64,6 @@ object BatchResolveCacheHolder {
             e.printStackTrace()
         }
     }
-
     fun convertBatchResolveString(): String {
         val jsonObject = JSONObject()
         val v4Array = JSONArray()
@@ -82,22 +74,18 @@ object BatchResolveCacheHolder {
             v4Array.put(host)
         }
         jsonObject.put("v4", v4Array)
-
         for (host in batchResolveV6List) {
             v6Array.put(host)
         }
         jsonObject.put("v6", v6Array)
-
         for (host in batchResolveBothList) {
             bothArray.put(host)
         }
         jsonObject.put("both", bothArray)
-
         for (host in batchResolveAutoList) {
             autoArray.put(host)
         }
         jsonObject.put("auto", autoArray)
-
         return jsonObject.toString()
     }
 }

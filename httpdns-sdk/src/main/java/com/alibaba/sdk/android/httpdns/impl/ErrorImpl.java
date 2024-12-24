@@ -3,6 +3,7 @@ package com.alibaba.sdk.android.httpdns.impl;
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
 import com.alibaba.sdk.android.httpdns.HttpDnsCallback;
 import com.alibaba.sdk.android.httpdns.HttpDnsService;
+import com.alibaba.sdk.android.httpdns.Region;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
@@ -131,6 +132,11 @@ public class ErrorImpl implements HttpDnsService, SyncService {
 
     @Override
     public void setRegion(String region) {
+
+    }
+
+    @Override
+    public void setRegion(Region region) {
 
     }
 

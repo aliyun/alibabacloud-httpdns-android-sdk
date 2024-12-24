@@ -12,4 +12,6 @@ interface IBasicShowDialog {
     fun showInputHostDialog()
 
     fun showAddPreResolveDialog()
+
+    fun onHttpDnsInit()
 }

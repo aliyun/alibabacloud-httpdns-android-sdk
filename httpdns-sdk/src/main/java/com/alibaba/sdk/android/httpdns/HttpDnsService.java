@@ -261,9 +261,18 @@ public interface HttpDnsService {
 	 * 设置region，海外节点
 	 * 国内版默认是中国大陆节点，国际版默认是新加坡节点
 	 *
-	 * @param region sg(新家坡), hk(中国香港), ""(中国大陆)
+	 * @param region sg(新家坡), hk(中国香港), ""(中国大陆), de(德国), us(美国)
 	 */
+	@Deprecated
 	void setRegion(String region);
+
+	/**
+	 * 设置region
+	 * 国内版默认是中国大陆节点
+	 *
+	 * @param region {@link Region}
+	 */
+	void setRegion(Region region);
 
 	/**
 	 * 立即清除域名端侧内存和本地缓存。

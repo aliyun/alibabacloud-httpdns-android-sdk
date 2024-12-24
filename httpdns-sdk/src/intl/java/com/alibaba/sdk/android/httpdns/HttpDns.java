@@ -52,6 +52,16 @@ public class HttpDns {
 	}
 
 	/**
+	 * 初始化方法，该方法主要是保存{@link InitConfig}，不会真正进行初始化。真正初始化是在{@link HttpDns#getService(Context, String)}中
+	 * 这么实现主要是为了兼容{@link InitConfig.Builder#buildFor(String)}方法，新客户使用该方法和旧的方法功能一致
+	 * @param accountId HttpDns控制台分配的AccountID
+	 * @param config {@link InitConfig}
+	 */
+	public static void init(String accountId, InitConfig config) {
+		InitConfig.addConfig(accountId, config);
+	}
+
+	/**
 	 * 启用或者禁用httpdns，理论上这个是内部接口，不给外部使用的
 	 * 但是已经对外暴露，所以保留
 	 *

@@ -91,15 +91,12 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                     for (host in BatchResolveCacheHolder.batchResolveV4List) {
                         infoList.add(ListItem(kListItemBatchResolve, host, 0))
                     }
-
                     for (host in BatchResolveCacheHolder.batchResolveV6List) {
                         infoList.add(ListItem(kListItemBatchResolve, host, 1))
                     }
-
                     for (host in BatchResolveCacheHolder.batchResolveBothList) {
                         infoList.add(ListItem(kListItemBatchResolve, host, 2))
                     }
-
                     for (host in BatchResolveCacheHolder.batchResolveAutoList) {
                         infoList.add(ListItem(kListItemBatchResolve, host, 3))
                     }
@@ -282,7 +279,6 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             2 -> BatchResolveCacheHolder.batchResolveBothList
             else -> BatchResolveCacheHolder.batchResolveAutoList
         }
-
         if (list.contains(host)) {
             Toast.makeText(
                 getApplication(),

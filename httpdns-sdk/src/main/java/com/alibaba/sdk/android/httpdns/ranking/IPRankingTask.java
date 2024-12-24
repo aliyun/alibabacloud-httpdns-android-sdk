@@ -44,11 +44,11 @@ public class IPRankingTask implements Runnable {
 	}
 
 	private int testConnectSpeed(String ip, int port) {
-		Socket socket = mSocketFactory.create();
 		long start = System.currentTimeMillis();
 		long end = Long.MAX_VALUE;
-		SocketAddress remoteAddress = new InetSocketAddress(ip, port);
-		try {
+		try (Socket socket = mSocketFactory.create()) {
+			SocketAddress remoteAddress = new InetSocketAddress(ip, port);
+
 			socket.connect(remoteAddress, 5 * 1000);
 			end = System.currentTimeMillis();
 		} catch (IOException e) {
@@ -57,7 +57,7 @@ public class IPRankingTask implements Runnable {
 		if (end == Long.MAX_VALUE) {
 			return Integer.MAX_VALUE;
 		}
-		return (int)(end - start);
+		return (int) (end - start);
 
 	}
 }

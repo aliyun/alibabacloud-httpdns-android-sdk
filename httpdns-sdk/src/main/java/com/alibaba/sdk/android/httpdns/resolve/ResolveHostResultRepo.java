@@ -35,7 +35,7 @@ public class ResolveHostResultRepo {
 		this.mCacheGroup = cacheGroup;
 	}
 
-	private void readFromDB(boolean cleanCache) {
+	private void readFromDB(long expiredThresholdMillis) {
 		final String region = mHttpDnsConfig.getRegion();
 		List<HostRecord> records = mDBHelper.readFromDb(region);
 		for (HostRecord record : records) {
@@ -55,17 +55,16 @@ public class ResolveHostResultRepo {
 			HttpDnsLog.d("cache ready");
 		}
 
-		if (cleanCache) {
-			mDBHelper.delete(records);
-		} else {
-			ArrayList<HostRecord> expired = new ArrayList<>();
-			for (HostRecord record : records) {
-				if (record.isExpired()) {
-					expired.add(record);
-				}
+		//清理db
+		ArrayList<HostRecord> expired = new ArrayList<>();
+		for (HostRecord record : records) {
+			//达到过期阈值
+			if (System.currentTimeMillis() > record.getQueryTime() + record.getTtl() * 1000L + expiredThresholdMillis) {
+				expired.add(record);
 			}
-			mDBHelper.delete(expired);
 		}
+		mDBHelper.delete(expired);
+
 		if (!mHttpDnsConfig.getRegion().equals(region)) {
 			// 防止刚读取完，region变化了
 			mCacheGroup.clearAll();
@@ -295,13 +294,13 @@ public class ResolveHostResultRepo {
 	/**
 	 * 配置 本地缓存开关，触发缓存读取逻辑
 	 */
-	public void setCachedIPEnabled(boolean enable, final boolean autoCleanCacheAfterLoad) {
+	public void setCachedIPEnabled(boolean enable, long expiredThresholdMillis) {
 		mEnableCache = enable;
 		try {
 			mHttpDnsConfig.getDbWorker().execute(new Runnable() {
 				@Override
 				public void run() {
-					readFromDB(autoCleanCacheAfterLoad);
+					readFromDB(expiredThresholdMillis);
 				}
 			});
 		} catch (Throwable ignored) {

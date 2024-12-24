@@ -2,7 +2,6 @@ package com.alibaba.sdk.android.httpdns.utils;
 
 import java.util.HashMap;
 
-import com.alibaba.sdk.android.httpdns.BuildConfig;
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
 import com.alibaba.sdk.android.httpdns.resolve.SniffException;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
@@ -11,13 +10,19 @@ public class Constants {
 
 	// region 定义
 	// 默认的region
-	public static final String REGION_DEFAULT = BuildConfig.DEFAULT_REGION;
+	public static final String REGION_DEFAULT = Constants.REGION_MAINLAND;
 	// 中国大陆
 	public static final String REGION_MAINLAND = "";
 	// 中国香港
 	public static final String REGION_HK = "hk";
 	// 新加坡
 	public static final String REGION_SG = "sg";
+	// 德国
+	public static final String REGION_DE = "de";
+	//美国
+	public static final String REGION_US = "us";
+	// global
+	public static final String REGION_GLOBAL = "global";
 
 	// 一些默认值 或者 单一场景定义
 	public static final int NO_PORT = -1;
@@ -26,7 +31,7 @@ public class Constants {
 	public static final String[] NO_IPS = new String[0];
 	public static final HashMap<String, String> NO_EXTRA = new HashMap<>();
 
-	public static final HTTPDNSResult EMPTY = new HTTPDNSResult("", NO_IPS, NO_IPS, NO_EXTRA,
+	public static final HTTPDNSResult EMPTY = new HTTPDNSResult("", NO_IPS, NO_IPS, "",
         false,
 		false);
 
@@ -39,6 +44,7 @@ public class Constants {
 	public static final boolean DEFAULT_ENABLE_CACHE_IP = false;
 	public static final boolean DEFAULT_ENABLE_AUTO_CLEAN_CACHE_AFTER_LOAD = false;
 	public static final boolean DEFAULT_ENABLE_HTTPS = false;
+	public static final boolean DEFAULT_ENABLE_DEGRADATION_LOCAL_DNS = false;
 	public static final String DEFAULT_SCHEMA = Constants.DEFAULT_ENABLE_HTTPS
 		? HttpRequestConfig.HTTPS_SCHEMA : HttpRequestConfig.HTTP_SCHEMA;
 	/**

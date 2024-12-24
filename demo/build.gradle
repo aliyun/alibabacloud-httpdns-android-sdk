@@ -79,7 +79,7 @@ android {
         dataBinding = true
     }
 
-    flavorDimensions "version"
+    flavorDimensions += "version"
 
     productFlavors {
         normal {
@@ -110,7 +110,7 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
 //    implementation project(path: ':httpdns-sdk')
-    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.4.1'
+    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.4.3'
 
     implementation('com.alibaba:fastjson:1.1.73.android@jar')
 //    implementation('com.emas.hybrid:emas-hybrid-android:1.1.0.4-public-SNAPSHOT') {

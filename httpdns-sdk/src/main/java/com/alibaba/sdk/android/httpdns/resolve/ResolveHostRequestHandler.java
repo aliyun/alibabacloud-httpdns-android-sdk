@@ -42,16 +42,6 @@ public class ResolveHostRequestHandler {
 	public void requestResolveHost(final String host, final RequestIpType type,
 								   Map<String, String> extras, final String cacheKey,
 								   RequestCallback<ResolveHostResponse> callback) {
-		if (!mHttpDnsConfig.isCurrentRegionMatch()) {
-			if (HttpDnsLog.isPrint()) {
-				HttpDnsLog.w(
-					"requestInterpretHost region miss match [" + mHttpDnsConfig.getRegion() + "] ["
-						+ mHttpDnsConfig.getCurrentServer().getRegion() + "]");
-			}
-			callback.onFail(Constants.region_not_match);
-			mScheduleService.updateRegionServerIps();
-			return;
-		}
 		HttpRequestConfig requestConfig = ResolveHostHelper.getConfig(mHttpDnsConfig, host, type,
 			extras, cacheKey,
 			mGlobalParams, mSignService);
@@ -63,16 +53,6 @@ public class ResolveHostRequestHandler {
 
 	public void requestResolveHost(final ArrayList<String> hostList, final RequestIpType type,
 								   RequestCallback<BatchResolveHostResponse> callback) {
-		if (!mHttpDnsConfig.isCurrentRegionMatch()) {
-			if (HttpDnsLog.isPrint()) {
-				HttpDnsLog.w(
-					"requestResolveHost region miss match [" + mHttpDnsConfig.getRegion() + "] ["
-						+ mHttpDnsConfig.getCurrentServer().getRegion() + "]");
-			}
-			callback.onFail(Constants.region_not_match);
-			mScheduleService.updateRegionServerIps();
-			return;
-		}
 		HttpRequestConfig requestConfig = ResolveHostHelper.getConfig(mHttpDnsConfig, hostList,
 			type,
 			mSignService);

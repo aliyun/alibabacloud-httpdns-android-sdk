@@ -1,13 +1,12 @@
 package com.alibaba.sdk.android.httpdns;
 
+import android.text.TextUtils;
+
 import com.alibaba.sdk.android.httpdns.cache.HostRecord;
-import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * sdns的解析结果
@@ -16,22 +15,24 @@ public class HTTPDNSResult {
     String host;
     String[] ips;
     String[] ipv6s;
-    Map<String, String> extra;
+    String extra;
     long queryTime;
     int ttl;
     boolean fromDB;
+    boolean fromLocalDns;
 
     public HTTPDNSResult(String host) {
         this.host = host;
         this.ips = Constants.NO_IPS;
         this.ipv6s = Constants.NO_IPS;
-        this.extra = Constants.NO_EXTRA;
+        this.extra = "";
         queryTime = 0;
         ttl = 0;
         fromDB = false;
+        fromLocalDns = false;
     }
 
-    public HTTPDNSResult(String host, String[] ips, String[] ipv6s, Map<String, String> extra, boolean expired, boolean isFromDB) {
+    public HTTPDNSResult(String host, String[] ips, String[] ipv6s, String extra, boolean expired, boolean isFromDB) {
         this.host = host;
         this.ips = ips;
         this.ipv6s = ipv6s;
@@ -41,8 +42,13 @@ public class HTTPDNSResult {
         this.fromDB = isFromDB;
     }
 
+    public HTTPDNSResult (String host, String[] ips, String[] ipv6s, String extra, boolean expired, boolean isFromDB, boolean isFromLocalDns) {
+        this(host, ips, ipv6s, extra, expired, isFromDB);
+        fromLocalDns = isFromLocalDns;
+    }
+
     public static HTTPDNSResult empty(String host) {
-        return new HTTPDNSResult(host, new String[0], new String[0], new HashMap<String, String>(), false, false);
+        return new HTTPDNSResult(host, new String[0], new String[0], "", false, false);
     }
 
     public void update(HostRecord record) {
@@ -52,7 +58,7 @@ public class HTTPDNSResult {
             } else if (record.getType() == RequestIpType.v6.ordinal()) {
                 ipv6s = record.getIps();
             }
-            extra = CommonUtil.toMap(record.getExtra());
+            extra = TextUtils.isEmpty(record.getExtra()) ? "" : record.getExtra();
             queryTime = record.getQueryTime();
             ttl = record.getTtl();
             fromDB = record.isFromDB();
@@ -84,7 +90,7 @@ public class HTTPDNSResult {
                 fromDB |= record.isFromDB();
             }
         }
-        this.extra = CommonUtil.toMap(extra);
+        this.extra = TextUtils.isEmpty(extra) ? "" : extra;
         this.queryTime = queryTime;
         this.ttl = ttl;
         this.fromDB = fromDB;
@@ -103,7 +109,9 @@ public class HTTPDNSResult {
             + ", expired:"
             + isExpired()
             + ", fromDB:"
-            + fromDB;
+            + fromDB
+            + ", from Local Dns:"
+            + fromLocalDns;
         return sb;
     }
 
@@ -119,15 +127,19 @@ public class HTTPDNSResult {
         return ipv6s;
     }
 
-    public Map<String, String> getExtras() {
+    public String getExtras() {
         return extra;
     }
 
     public boolean isExpired() {
-        return Math.abs(System.currentTimeMillis() - queryTime) > ttl * 1000L;
+        return !fromLocalDns && Math.abs(System.currentTimeMillis() - queryTime) > ttl * 1000L;
     }
 
     public boolean isFromDB() {
         return fromDB;
+    }
+
+    public boolean isFromLocalDns() {
+        return fromLocalDns;
     }
 }

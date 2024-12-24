@@ -13,6 +13,7 @@ import com.alibaba.sdk.android.httpdns.HttpDnsCallback;
 import com.alibaba.sdk.android.httpdns.HttpDnsService;
 import com.alibaba.sdk.android.httpdns.HttpDnsSettings;
 import com.alibaba.sdk.android.httpdns.InitConfig;
+import com.alibaba.sdk.android.httpdns.Region;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
 import com.alibaba.sdk.android.httpdns.cache.RecordDBHelper;
@@ -28,6 +29,7 @@ import com.alibaba.sdk.android.httpdns.net.NetworkStateManager;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingService;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService.OnRegionServerIpUpdate;
+import com.alibaba.sdk.android.httpdns.serverip.ranking.RegionServerRankingService;
 import com.alibaba.sdk.android.httpdns.track.SessionTrackMgr;
 import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
@@ -46,6 +48,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	protected ResolveHostRequestHandler mRequestHandler;
 	protected RegionServerScheduleService mScheduleService;
 	protected IPRankingService mIpIPRankingService;
+	protected RegionServerRankingService mRegionServerRankingService;
 	protected ResolveHostService mResolveHostService;
 	protected BatchResolveHostService mBatchResolveHostService;
 	private HostFilter mFilter;
@@ -62,6 +65,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			mFilter = new HostFilter();
 			mSignService = new SignService(secret);
 			mIpIPRankingService = new IPRankingService(this.mHttpDnsConfig);
+			mRegionServerRankingService = new RegionServerRankingService(mHttpDnsConfig);
 			mResultRepo = new ResolveHostResultRepo(this.mHttpDnsConfig, this.mIpIPRankingService,
 				new RecordDBHelper(this.mHttpDnsConfig.getContext(), this.mHttpDnsConfig.getAccountId()),
 				new ResolveHostCacheGroup());
@@ -90,10 +94,10 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			}
 			NetworkStateManager.getInstance().init(context);
 			NetworkStateManager.getInstance().addListener(this);
-			if (mHttpDnsConfig.getCurrentServer().shouldUpdateServerIp()
-				|| !mHttpDnsConfig.isCurrentRegionMatch()) {
+			if (mHttpDnsConfig.getCurrentServer().shouldUpdateServerIp()) {
 				mScheduleService.updateRegionServerIps();
 			}
+			mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
 			favorInit(context, accountId);
 
 			if (HttpDnsLog.isPrint()) {
@@ -111,19 +115,18 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			// 先设置和网络相关的内容
 			this.mHttpDnsConfig.setTimeout(config.getTimeout());
 			this.mHttpDnsConfig.setHTTPSRequestEnabled(config.isEnableHttps());
+			mHttpDnsConfig.setEnableDegradationLocalDns(config.isEnableDegradationLocalDns());
 			// 再设置一些可以提前，没有副作用的内容
 			mResolveHostService.setEnableExpiredIp(config.isEnableExpiredIp());
 			if (config.getIPRankingList() != null) {
 				mIpIPRankingService.setIPRankingList(config.getIPRankingList());
 			}
-			// 设置region 必须在 读取缓存之前
-			if (config.getRegion() != InitConfig.NOT_SET) {
-				this.mHttpDnsConfig.setRegion(config.getRegion());
-			}
+			// 设置region 必须在 读取缓存之前。2.4.1版本开始region初始化提前到HttpDnsConfig初始化
+
 			// 设置 主站域名 需要在 读取缓存之前
 			this.mResultRepo.setHostListWhichIpFixed(config.getHostListWithFixedIp());
 			// 设置缓存控制，并读取缓存
-			mResultRepo.setCachedIPEnabled(config.isEnableCacheIp(), Constants.DEFAULT_ENABLE_AUTO_CLEAN_CACHE_AFTER_LOAD);
+			mResultRepo.setCachedIPEnabled(config.isEnableCacheIp(), config.getExpiredThresholdMillis());
 			this.mResultRepo.setCacheTtlChanger(config.getCacheTtlChanger());
 			resolveAfterNetworkChange = config.isResolveAfterNetworkChange();
 
@@ -192,6 +195,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			mResultRepo.clearMemoryCache();
 		}
 		mRequestHandler.resetStatus();
+
+		//服务IP更新，触发服务IP测速
+		mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
 	}
 
 	@Override
@@ -568,7 +574,6 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 		}
 		region = CommonUtil.fixRegion(region);
 		if (CommonUtil.regionEquals(this.mHttpDnsConfig.getRegion(), region)
-			&& this.mHttpDnsConfig.isCurrentRegionMatch()
 			&& !this.mHttpDnsConfig.isAllInitServer()) {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("region " + region + " is same, do not update serverIps");
@@ -578,8 +583,15 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 		boolean changed = mHttpDnsConfig.setRegion(region);
 		if (changed) {
 			mResultRepo.clearMemoryCache();
+			//region变化，服务IP变成对应的预置IP，触发测速
+			mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
 		}
 		mScheduleService.updateRegionServerIps(region);
+	}
+
+	@Override
+	public void setRegion(Region region) {
+		setRegion(region == null ? "" : region.getRegion());
 	}
 
 	@Override
@@ -668,6 +680,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 					}
 				}
 			});
+
+			//网络变化，触发服务IP测速
+			mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
 		} catch (Exception e) {
 		}
 	}
@@ -701,8 +716,6 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 		if (type == RequestIpType.auto) {
 			if (networkDetector != null) {
 				switch (networkDetector.getNetType(mHttpDnsConfig.getContext())) {
-					case v6:
-						return RequestIpType.v6;
 					case v4:
 						return RequestIpType.v4;
 					default:

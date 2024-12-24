@@ -40,7 +40,7 @@ public class CommonUtil {
 
 	public static String fixRegion(String region) {
 		if (region == null) {
-			return Constants.REGION_MAINLAND;
+			return Constants.REGION_DEFAULT;
 		}
 		return region;
 	}

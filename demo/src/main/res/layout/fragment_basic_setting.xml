@@ -168,6 +168,7 @@
                         android:background="?selectableItemBackground"
                         android:textSize="16dp" />
 
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -190,6 +191,12 @@
                         android:background="?selectableItemBackground"
                         android:visibility="gone"
                         android:textSize="16dp" />
+
+                    <Button android:id="@+id/init_httpdns"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/init_httpdns"
+                        android:onClick="@{() -> viewModel.initHttpDns()}"/>
 
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>

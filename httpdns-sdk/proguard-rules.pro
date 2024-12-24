@@ -30,6 +30,7 @@
 -flattenpackagehierarchy com.alibaba.sdk.android.httpdns
 -keep class com.alibaba.sdk.android.httpdns.HttpDns{*;}
 -keep interface com.alibaba.sdk.android.httpdns.HttpDnsService{*;}
+-keep class com.alibaba.sdk.android.httpdns.impl.ErrorImpl{*;}
 -keep interface com.alibaba.sdk.android.httpdns.SyncService{*;}
 -keep class com.alibaba.sdk.android.httpdns.InitConfig{*;}
 -keep class com.alibaba.sdk.android.httpdns.InitConfig$Builder{*;}
@@ -63,4 +64,4 @@
     public <methods>;
     public <fields>;
 }
--keep class com.alibaba.sdk.android.httpdns.impl.ErrorImpl{*;}
+-keep enum com.alibaba.sdk.android.httpdns.Region {*;}

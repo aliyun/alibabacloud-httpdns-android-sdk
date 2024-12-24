@@ -3,11 +3,12 @@ package com.alibaba.sdk.android.httpdns.impl;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 
-import com.alibaba.sdk.android.httpdns.BuildConfig;
 import com.alibaba.sdk.android.httpdns.HttpDnsSettings;
+import com.alibaba.sdk.android.httpdns.InitConfig;
 import com.alibaba.sdk.android.httpdns.config.ConfigCacheHelper;
 import com.alibaba.sdk.android.httpdns.config.RegionServer;
 import com.alibaba.sdk.android.httpdns.config.ServerConfig;
+import com.alibaba.sdk.android.httpdns.config.region.RegionServerManager;
 import com.alibaba.sdk.android.httpdns.config.SpCacheItem;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
 import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
@@ -26,16 +27,12 @@ public class HttpDnsConfig implements SpCacheItem {
 	/**
 	 * 初始服务节点
 	 */
-	private final RegionServer mInitServer = new RegionServer(BuildConfig.INIT_SERVER,
-		Constants.NO_PORTS,
-		BuildConfig.IPV6_INIT_SERVER, Constants.NO_PORTS, Constants.REGION_DEFAULT);
+	private RegionServer mInitServer;
 
 	/**
 	 * 兜底的调度服务IP，用于应对国际版服务IP有可能不稳定的情况
 	 */
-	private final RegionServer mDefaultUpdateServer = new RegionServer(BuildConfig.UPDATE_SERVER,
-		Constants.NO_PORTS, BuildConfig.IPV6_UPDATE_SERVER, Constants.NO_PORTS,
-		Constants.REGION_DEFAULT);
+	private RegionServer mDefaultUpdateServer;
 
 	/**
 	 * 当前服务节点
@@ -53,7 +50,7 @@ public class HttpDnsConfig implements SpCacheItem {
 	/**
 	 * 当前region
 	 */
-	private String mRegion = Constants.REGION_DEFAULT;
+	private String mRegion;
 	/**
 	 * 超时时长
 	 */
@@ -71,6 +68,10 @@ public class HttpDnsConfig implements SpCacheItem {
 	 * 是否禁用probe能力
 	 */
 	private boolean mIPRankingDisabled = false;
+	/**
+	 * 是否开启降级到Local Dns
+	 */
+	private boolean mEnableDegradationLocalDns = Constants.DEFAULT_ENABLE_DEGRADATION_LOCAL_DNS;
 
 	/**
 	 * 网络探测接口
@@ -84,13 +85,19 @@ public class HttpDnsConfig implements SpCacheItem {
 	protected ExecutorService mDbWorker = ThreadUtil.createDBExecutorService();
 
 	public HttpDnsConfig(Context context, String accountId) {
-		this.mContext = context;
-		this.mAccountId = accountId;
-		this.mCurrentServer = new ServerConfig(this);
+		mContext = context;
+		mAccountId = accountId;
+
+		//region提前设置
+		mRegion = getInitRegion(accountId);
+		mInitServer = RegionServerManager.getInitServer(mRegion);
+		mDefaultUpdateServer = RegionServerManager.getUpdateServer(mRegion);
+
+		mCurrentServer = new ServerConfig(this, mInitServer.getServerIps(), mInitServer.getPorts(), mInitServer.getIpv6ServerIps(), mInitServer.getIpv6Ports());
 		// 先从缓存读取数据，再赋值cacheHelper， 避免在读取缓存过程中，触发写缓存操作
 		ConfigCacheHelper helper = new ConfigCacheHelper();
 		helper.restoreFromCache(context, this);
-		this.mCacheHelper = helper;
+		mCacheHelper = helper;
 	}
 
 	public Context getContext() {
@@ -185,13 +192,23 @@ public class HttpDnsConfig implements SpCacheItem {
 		return !mSchema.equals(oldSchema);
 	}
 
+	public void setEnableDegradationLocalDns(boolean enable) {
+		mEnableDegradationLocalDns = enable;
+	}
+
+	public boolean isEnableDegradationLocalDns() {
+		return mEnableDegradationLocalDns;
+	}
+
 	/**
 	 * 设置用户切换的region
 	 */
 	public boolean setRegion(String region) {
-		if (!this.mRegion.equals(region)) {
-			this.mRegion = region;
-			saveToCache();
+		if (!mRegion.equals(region)) {
+			mRegion = region;
+			mInitServer = RegionServerManager.getInitServer(mRegion);
+			mDefaultUpdateServer = RegionServerManager.getUpdateServer(mRegion);
+			mCurrentServer.setServerIps(mRegion, mInitServer.getServerIps(), mInitServer.getPorts(), mInitServer.getIpv6ServerIps(), mInitServer.getIpv6Ports());
 			return true;
 		}
 		return false;
@@ -332,5 +349,27 @@ public class HttpDnsConfig implements SpCacheItem {
 	@Override
 	public void saveToCache(SharedPreferences.Editor editor) {
 		editor.putBoolean(Constants.CONFIG_ENABLE, mEnabled);
+	}
+
+	private String getInitRegion(String accountId) {
+		InitConfig config = InitConfig.getInitConfig(accountId);
+		if (config == null) {
+			return Constants.REGION_DEFAULT;
+		}
+
+		String region = config.getRegion();
+		if (region == null) {
+			return Constants.REGION_DEFAULT;
+		}
+
+		switch (region) {
+			case Constants.REGION_HK:
+			case Constants.REGION_SG:
+			case Constants.REGION_DE:
+			case Constants.REGION_US:
+				return region;
+			default:
+				return Constants.REGION_DEFAULT;
+		}
 	}
 }

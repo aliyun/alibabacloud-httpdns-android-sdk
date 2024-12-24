@@ -13,10 +13,14 @@
     <string name="enable_network_changed_pre_resolve">网络切换自动刷新</string>
     <string name="enable_httpdns_log">允许SDK打印日志</string>
     <string name="timeout">超时时间</string>
+    <string name="init_tip">请先初始化HttpDns</string>
+    <string name="inited_httpdns">已经初始化</string>
 
     <string name="china">中国</string>
     <string name="china_hk">中国香港</string>
     <string name="singapore">新加坡</string>
+    <string name="germany">德国</string>
+    <string name="america">美国</string>
 
     <string name="select_region">选择Region</string>
     <string name="confirm">确认</string>
@@ -52,6 +56,7 @@
     <string name="add_pre_resolve_hint">请输入要预解析的域名</string>
     <string name="pre_resolve_list">预解析域名列表</string>
     <string name="pre_resolve_host_duplicate">%s域名已经被添加至预解析列表，请勿重复添加</string>
+    <string name="init_httpdns">初始化HttpDns</string>
     <string name="batch_resolve_list">批量解析域名列表</string>
     <string name="add_batch_resolve_hint">请输入要批量解析的域名</string>
     <string name="add_batch_resolve">请输入要批量解析的域名</string>

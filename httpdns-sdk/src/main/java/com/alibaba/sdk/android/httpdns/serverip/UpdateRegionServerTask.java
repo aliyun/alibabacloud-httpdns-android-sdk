@@ -18,8 +18,6 @@ import com.alibaba.sdk.android.httpdns.request.ResponseParser;
 import com.alibaba.sdk.android.httpdns.request.RetryHttpRequest;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
-import android.text.TextUtils;
-
 import static com.alibaba.sdk.android.httpdns.resolve.ResolveHostHelper.getSid;
 
 public class UpdateRegionServerTask {
@@ -28,8 +26,8 @@ public class UpdateRegionServerTask {
 										  RequestCallback<UpdateRegionServerResponse> callback) {
 		String path = "/" + config.getAccountId() + "/ss?"
 			+ "platform=android&sdk_version=" + BuildConfig.VERSION_NAME
-			+ ((TextUtils.isEmpty(region) ? "" : ("&region=" + region))
-			+ getSid());
+			+ "&region=global"
+			+ getSid();
 
 		RegionServer[] servers;
 

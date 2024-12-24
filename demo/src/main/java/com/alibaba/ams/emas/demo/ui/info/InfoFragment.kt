@@ -82,7 +82,6 @@ class InfoFragment : Fragment() {
             startActivity(intent)
         }
 
-
         return binding.root
     }
 

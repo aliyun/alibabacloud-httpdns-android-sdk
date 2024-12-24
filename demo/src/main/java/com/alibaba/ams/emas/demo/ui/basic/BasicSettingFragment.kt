@@ -57,18 +57,24 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
             val china = getString(R.string.china)
             val chinaHK = getString(R.string.china_hk)
             val singapore = getString(R.string.singapore)
-            val items = arrayOf(china, chinaHK, singapore)
+            val germany = getString(R.string.germany)
+            val america = getString(R.string.america)
+            val items = arrayOf(china, chinaHK, singapore, germany, america)
             var region = ""
             val preferences = activity?.let { getAccountPreference(it) }
             val index = when (preferences?.getString(KEY_REGION, "cn")) {
                 "hk" -> 1
                 "sg" -> 2
+                "de" -> 3
+                "us" -> 4
                 else -> 0
             }
             setSingleChoiceItems(items, index) { _, which ->
                 region = when (which) {
                     1 -> "hk"
                     2 -> "sg"
+                    3 -> "de"
+                    4 -> "us"
                     else -> "cn"
                 }
             }
@@ -155,5 +161,10 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
             }
             show()
         }
+    }
+
+    override fun onHttpDnsInit() {
+        _binding?.initHttpdns?.setText(R.string.inited_httpdns)
+        _binding?.initHttpdns?.isClickable = false
     }
 }

@@ -1,8 +1,10 @@
 package com.alibaba.sdk.android.httpdns;
 
-import java.util.HashMap;
+import android.text.format.DateUtils;
+
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
@@ -14,9 +16,9 @@ import com.alibaba.sdk.android.httpdns.utils.Constants;
  */
 public class InitConfig {
 
-	private static final HashMap<String, InitConfig> configs = new HashMap<>();
+	private static final Map<String, InitConfig> configs = new ConcurrentHashMap<>();
 
-	private static void addConfig(String accountId, InitConfig config) {
+	static void addConfig(String accountId, InitConfig config) {
 		configs.put(accountId, config);
 	}
 
@@ -36,6 +38,7 @@ public class InitConfig {
 
 	private final boolean mEnableExpiredIp;
 	private final boolean mEnableCacheIp;
+	private final long mExpiredThresholdMillis;
 	private final int mTimeout;
 	private final boolean mEnableHttps;
 	private final List<IPRankingBean> mIPRankingList;
@@ -47,10 +50,12 @@ public class InitConfig {
 	private final NotUseHttpDnsFilter mNotUseHttpDnsFilter;
 	private final boolean mEnableCrashDefend;
 	private final Map<String, String> mSdnsGlobalParams;
+	private final boolean mEnableDegradationLocalDns;
 
 	private InitConfig(Builder builder) {
 		mEnableExpiredIp = builder.enableExpiredIp;
 		mEnableCacheIp = builder.enableCacheIp;
+		mExpiredThresholdMillis = builder.expiredThresholdMillis;
 		mTimeout = builder.timeout;
 		mEnableHttps = builder.enableHttps;
 		mIPRankingList = builder.ipRankingList;
@@ -62,6 +67,7 @@ public class InitConfig {
 		mNotUseHttpDnsFilter = builder.notUseHttpDnsFilter;
 		mEnableCrashDefend = builder.enableCrashDefend;
 		mSdnsGlobalParams = builder.sdnsGlobalParams;
+		mEnableDegradationLocalDns = builder.enableDegradationLocalDns;
 	}
 
 	public boolean isEnableExpiredIp() {
@@ -70,6 +76,10 @@ public class InitConfig {
 
 	public boolean isEnableCacheIp() {
 		return mEnableCacheIp;
+	}
+
+	public long getExpiredThresholdMillis() {
+		return mExpiredThresholdMillis;
 	}
 
 	public boolean isResolveAfterNetworkChange() {
@@ -82,6 +92,10 @@ public class InitConfig {
 
 	public boolean isEnableHttps() {
 		return mEnableHttps;
+	}
+
+	public boolean isEnableDegradationLocalDns() {
+		return mEnableDegradationLocalDns;
 	}
 
 	public List<IPRankingBean> getIPRankingList() {
@@ -120,7 +134,9 @@ public class InitConfig {
 	public static class Builder {
 		private boolean enableExpiredIp = Constants.DEFAULT_ENABLE_EXPIRE_IP;
 		private boolean enableCacheIp = Constants.DEFAULT_ENABLE_CACHE_IP;
+		private long expiredThresholdMillis = 0L;
 		private int timeout = Constants.DEFAULT_TIMEOUT;
+		private boolean enableDegradationLocalDns = Constants.DEFAULT_ENABLE_DEGRADATION_LOCAL_DNS;
 		private boolean enableHttps = Constants.DEFAULT_ENABLE_HTTPS;
 		private List<IPRankingBean> ipRankingList = null;
 		private String region = NOT_SET;
@@ -152,6 +168,15 @@ public class InitConfig {
 			return this;
 		}
 
+		public Builder setEnableCacheIp(boolean enableCacheIp, long expiredThresholdMillis) {
+			this.enableCacheIp = enableCacheIp;
+			if (expiredThresholdMillis >= 0 && expiredThresholdMillis <= DateUtils.YEAR_IN_MILLIS) {
+				this.expiredThresholdMillis = expiredThresholdMillis;
+			}
+
+			return this;
+		}
+
 		/**
 		 * 设置请求超时时间,单位ms,默认为2s
 		 * @param timeoutMillis 超时时间，单位ms
@@ -170,6 +195,16 @@ public class InitConfig {
 		@Deprecated
 		public Builder setTimeout(int timeout) {
 			this.timeout = timeout;
+			return this;
+		}
+
+		/**
+		 * 设置开启/关闭降级到Local Dns，在httpdns解析失败或者域名被过滤不走httpdns的时候，开启降级会走local dns解析
+		 * @param enableDegradation true, 开启 ｜ false, 关闭
+		 * @return {@link Builder}
+		 */
+		public Builder setEnableDegradationLocalDns(boolean enableDegradation) {
+			enableDegradationLocalDns = enableDegradation;
 			return this;
 		}
 
@@ -193,8 +228,17 @@ public class InitConfig {
 			return this;
 		}
 
+		@Deprecated
 		public Builder setRegion(String region) {
 			this.region = region;
+			return this;
+		}
+
+		public Builder setRegion(Region region) {
+			if (region != null) {
+				this.region = region.getRegion();
+			}
+
 			return this;
 		}
 
@@ -267,6 +311,10 @@ public class InitConfig {
 		public Builder setSdnsGlobalParams(Map<String, String> params) {
 			sdnsGlobalParams = params;
 			return this;
+		}
+
+		public InitConfig build() {
+			return new InitConfig(this);
 		}
 
 		public InitConfig buildFor(String accountId) {

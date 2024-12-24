@@ -1,5 +1,11 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -163,8 +169,10 @@ public class ResolveHostService {
 	public HTTPDNSResult resolveHostSync(final String host, final RequestIpType type,
 										 final Map<String, String> extras, final String cacheKey) {
 		if (mFilter.isFiltered(host)) {
-			HttpDnsLog.d("request host " + host + ", which is filtered");
-			return Constants.EMPTY;
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("request host " + host + ", which is filtered");
+			}
+			return degradationLocalDns(host);
 		}
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("sync request host " + host + " with type " + type + " extras : "
@@ -186,6 +194,14 @@ public class ResolveHostService {
 			if (result.isExpired()) {
 				//如果缓存已经过期了，发起异步解析更新缓存
 				asyncResolveHostInner(host, type, extras, cacheKey);
+			}
+
+			//可能是空结果，如果开启降级local dns，走local dns解析
+			if ((result.getIps() == null || result.getIps().length == 0)
+					&& (result.getIpv6s() == null || result.getIpv6s().length == 0)) {
+				if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
+					return degradationLocalDns(host);
+				}
 			}
 
 			return result;
@@ -224,13 +240,57 @@ public class ResolveHostService {
 					"request host " + host + " for " + type + " and return " + result.toString()
 						+ " after request");
 			}
+
+			//可能是空结果，如果开启降级local dns，走local dns解析
+			if ((result.getIps() == null || result.getIps().length == 0)
+					&& (result.getIpv6s() == null || result.getIpv6s().length == 0)) {
+				if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
+					return degradationLocalDns(host);
+				}
+			}
+
 			return result;
 		} else {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.i("request host " + host + " and return empty after request");
 			}
-			return Constants.EMPTY;
+			return degradationLocalDns(host);
 		}
+	}
+
+	private HTTPDNSResult degradationLocalDns(String host) {
+		if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("request host " + host + " via local dns");
+			}
+			try {
+				InetAddress[] addresses = InetAddress.getAllByName(host);
+				if (addresses != null && addresses.length > 0) {
+					List<String> ips = new ArrayList<>();
+					List<String> ipv6s = new ArrayList<>();
+					for (InetAddress address : addresses) {
+						if (address instanceof Inet4Address) {
+							ips.add(address.getHostAddress());
+						} else if (address instanceof Inet6Address) {
+							ipv6s.add(address.getHostAddress());
+						}
+					}
+
+					HTTPDNSResult result = new HTTPDNSResult(host, ips.toArray(new String[0]), ipv6s.toArray(new String[0]), null, false, false, true);
+
+					if (HttpDnsLog.isPrint()) {
+						HttpDnsLog.i("request host " + host + " via local dns return " + result);
+					}
+					return result;
+				}
+			} catch (UnknownHostException e) {
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.e("failed request host " + host + " via local dns", e);
+				}
+			}
+		}
+
+		return Constants.EMPTY;
 	}
 
 	private void syncResolveHostInner(final String host, final RequestIpType type,
@@ -330,7 +390,16 @@ public class ResolveHostService {
 				HttpDnsLog.d("request host " + host + ", which is filtered");
 			}
 			if (callback != null) {
-				callback.onHttpDnsCompleted(Constants.EMPTY);
+				if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
+					mHttpDnsConfig.getResolveWorker().execute(new Runnable() {
+						@Override
+						public void run() {
+							callback.onHttpDnsCompleted(degradationLocalDns(host));
+						}
+					});
+				} else {
+					callback.onHttpDnsCompleted(Constants.EMPTY);
+				}
 			}
 			return;
 		}
@@ -354,6 +423,20 @@ public class ResolveHostService {
 			if (result.isExpired()) {
 				//如果缓存已经过期了，发起异步解析更新缓存
 				asyncResolveHostInner(host, type, extras, cacheKey);
+			}
+
+			//可能是空结果，如果开启降级local dns，走local dns解析
+			if ((result.getIps() == null || result.getIps().length == 0)
+					&& (result.getIpv6s() == null || result.getIpv6s().length == 0)) {
+				if (callback != null && mHttpDnsConfig.isEnableDegradationLocalDns()) {
+					mHttpDnsConfig.getResolveWorker().execute(new Runnable() {
+						@Override
+						public void run() {
+							callback.onHttpDnsCompleted(degradationLocalDns(host));
+						}
+					});
+					return;
+				}
 			}
 
 			if (callback != null) {
@@ -427,6 +510,15 @@ public class ResolveHostService {
 					}
 
 					if (callback != null) {
+						//可能是空结果，如果开启降级local dns，走local dns解析
+						if ((result.getIps() == null || result.getIps().length == 0)
+								&& (result.getIpv6s() == null || result.getIpv6s().length == 0)) {
+							if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
+								callback.onHttpDnsCompleted(degradationLocalDns(host));
+								return;
+							}
+						}
+
 						callback.onHttpDnsCompleted(result);
 					}
 				} else {
@@ -435,7 +527,7 @@ public class ResolveHostService {
 					}
 
 					if (callback != null) {
-						callback.onHttpDnsCompleted(Constants.EMPTY);
+						callback.onHttpDnsCompleted(degradationLocalDns(host));
 					}
 				}
 			}

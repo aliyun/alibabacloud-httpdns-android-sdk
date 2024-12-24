@@ -3,10 +3,12 @@ package com.alibaba.sdk.android.httpdns.config;
 import java.util.Arrays;
 
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
+import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 
 /**
  * 服务节点配置
@@ -22,11 +24,9 @@ public class ServerConfig extends RegionServer implements SpCacheItem {
 	private int mLastOkServerIndexForV6 = 0;
 	private int mCurrentServerIndexForV6 = 0;
 
-	public ServerConfig(HttpDnsConfig config) {
-		super(config.getInitServer().getServerIps(), config.getInitServer().getPorts(),
-			config.getInitServer().getIpv6ServerIps(), config.getInitServer().getIpv6Ports(),
-			config.getInitServer().getRegion());
-		this.mHttpDnsConfig = config;
+	public ServerConfig(HttpDnsConfig config, String[] serverIps, int[] ports, String[] ipv6ServerIps, int[] ipv6Ports) {
+		super(serverIps, ports, ipv6ServerIps, ipv6Ports, config.getRegion());
+		mHttpDnsConfig = config;
 	}
 
 	/**
@@ -88,7 +88,7 @@ public class ServerConfig extends RegionServer implements SpCacheItem {
 	 *
 	 * @return false 表示 前后服务一直，没有更新
 	 */
-	public boolean setServerIps(String region, String[] serverIps, int[] ports,
+	public synchronized boolean setServerIps(String region, String[] serverIps, int[] ports,
 								String[] serverV6Ips, int[] v6Ports) {
 		region = CommonUtil.fixRegion(region);
 		if (serverIps == null || serverIps.length == 0) {
@@ -121,6 +121,121 @@ public class ServerConfig extends RegionServer implements SpCacheItem {
 			mHttpDnsConfig.saveToCache();
 		}
 		return changed || v6changed;
+	}
+
+	public synchronized void updateServerIpv4sRank(String[] sortedIps, int[] ports) {
+		String[] serverIps = getServerIps();
+		int[] serverPorts = getPorts();
+		String region = getRegion();
+
+		//对比和当前的region server是否是同一批，避免测速完已经被更新
+		if (serverIps.length != sortedIps.length) {
+			//ip数量不一致，数据已经被更新
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("abort rank server ip count changed, current ips: " + Arrays.toString(serverIps)
+						+ ", sorted ips: " + Arrays.toString(sortedIps));
+			}
+			return;
+		}
+
+		boolean contain;
+		//如果排序的ip都在当前Server ip列表中，认为是一批服务ip，ip和端口需要一起判断
+		for (int i = 0; i != sortedIps.length; ++i) {
+			contain = isContainServiceIp(serverIps, serverPorts, sortedIps[i], ports == null ? -1 : ports[i]);
+			if (!contain) {
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.d("abort rank server ip as changed, current ips: " + Arrays.toString(serverIps)
+							+ ", ports: " + Arrays.toString(serverPorts)
+							+ ", sorted ips: " + Arrays.toString(sortedIps)
+							+ ", ports: " + Arrays.toString(ports)
+					);
+				}
+
+				return;
+			}
+		}
+
+		if (HttpDnsLog.isPrint()) {
+			HttpDnsLog.d("update ranked server ips: " + Arrays.toString(sortedIps)
+					+ ", ports: " + Arrays.toString(ports));
+		}
+		//仅更新内存
+		boolean changed = updateRegionAndIpv4(region, sortedIps, ports);
+		if (changed) {
+			this.mLastOkServerIndex = 0;
+			this.mCurrentServerIndex = 0;
+		}
+	}
+
+	public synchronized void updateServerIpv6sRank(String[] sortedIps, int[] ports) {
+		//和当前ip进行对比，看看是不是已经被更新了，如果被更新了那此次排序结果不使用
+		String[] serverIps = getIpv6ServerIps();
+		int[] serverPorts = getIpv6Ports();
+
+		//对比和当前的region server是否是同一批，避免测速完已经被更新
+		if (serverIps.length != sortedIps.length) {
+			//ip数量不一致，数据已经被更新
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("abort rank server ip count changed, current ipv6s: " + Arrays.toString(serverIps)
+						+ ", sorted ipv6s: " + Arrays.toString(sortedIps));
+			}
+			return;
+		}
+
+		boolean contain;
+		//如果排序的ip都在当前Server ip列表中，认为是一批服务ip
+		for (int i = 0; i != sortedIps.length; ++i) {
+			contain = isContainServiceIp(serverIps, serverPorts, sortedIps[i], ports == null ? -1 : ports[i]);
+			if (!contain) {
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.d("abort rank server ip as changed, current ipv6s: " + Arrays.toString(serverIps)
+							+ ", ports: " + Arrays.toString(serverPorts)
+							+ ", sorted ipv6s: " + Arrays.toString(sortedIps)
+							+ ", ports: " + Arrays.toString(ports)
+					);
+				}
+
+				return;
+			}
+		}
+
+		if (HttpDnsLog.isPrint()) {
+			HttpDnsLog.d("update ranked server ipv6s: " + Arrays.toString(sortedIps)
+					+ ", ports: " + Arrays.toString(ports));
+		}
+
+		//仅更新内存
+		boolean v6changed = updateIpv6(sortedIps, ports);
+		if (v6changed) {
+			mLastOkServerIndexForV6 = 0;
+			mCurrentServerIndexForV6 = 0;
+		}
+	}
+
+	private boolean isContainServiceIp(String[] sourceIps, int[] sourcePorts, String targetIp, int targetPort) {
+		if (sourceIps == null || sourceIps.length == 0) {
+			return false;
+		}
+
+		for (int i = 0; i != sourceIps.length; ++i) {
+			if (TextUtils.equals(sourceIps[i], targetIp)) {
+				if (sourcePorts == null) {
+					return targetPort <= 0;
+				}
+
+				if (i < sourcePorts.length) {
+					if (sourcePorts[i] == targetPort) {
+						return true;
+					}
+				} else {
+					if (targetPort <= 0) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -236,23 +351,26 @@ public class ServerConfig extends RegionServer implements SpCacheItem {
 
 	@Override
 	public void restoreFromCache(SharedPreferences sp) {
-		String[] serverIps = CommonUtil.parseStringArray(sp.getString(Constants.CONFIG_KEY_SERVERS,
-			CommonUtil.translateStringArray(getServerIps())));
-		int[] ports = CommonUtil.parsePorts(
-			sp.getString(Constants.CONFIG_KEY_PORTS, CommonUtil.translateIntArray(getPorts())));
-		String[] serverV6Ips = CommonUtil.parseStringArray(
-			sp.getString(Constants.CONFIG_KEY_SERVERS_IPV6,
-				CommonUtil.translateStringArray(getIpv6ServerIps())));
-		int[] v6Ports = CommonUtil.parsePorts(sp.getString(Constants.CONFIG_KEY_PORTS_IPV6,
-			CommonUtil.translateIntArray(getIpv6Ports())));
-		String currentServerRegion = sp.getString(Constants.CONFIG_CURRENT_SERVER_REGION,
-			getRegion());
-		updateAll(currentServerRegion, serverIps, ports, serverV6Ips, v6Ports);
-		mCurrentServerIndex = sp.getInt(Constants.CONFIG_CURRENT_INDEX, 0);
-		mLastOkServerIndex = sp.getInt(Constants.CONFIG_LAST_INDEX, 0);
-		mCurrentServerIndexForV6 = sp.getInt(Constants.CONFIG_CURRENT_INDEX_IPV6, 0);
-		mLastOkServerIndexForV6 = sp.getInt(Constants.CONFIG_LAST_INDEX_IPV6, 0);
-		mServerIpsLastUpdatedTime = sp.getLong(Constants.CONFIG_SERVERS_LAST_UPDATED_TIME, 0);
+		String cachedServerRegion = sp.getString(Constants.CONFIG_CURRENT_SERVER_REGION,
+				getRegion());
+		//初始化region和缓存server region一致的情况，使用缓存的服务IP。否则初始化的region优先级更高
+		if (TextUtils.equals(cachedServerRegion, getRegion())) {
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("restore service ip of " + (TextUtils.isEmpty(cachedServerRegion) ? "default" : cachedServerRegion));
+			}
+			String[] serverIps = CommonUtil.parseStringArray(sp.getString(Constants.CONFIG_KEY_SERVERS,
+					CommonUtil.translateStringArray(getServerIps())));
+			int[] ports = CommonUtil.parsePorts(
+					sp.getString(Constants.CONFIG_KEY_PORTS, CommonUtil.translateIntArray(getPorts())));
+			String[] serverV6Ips = CommonUtil.parseStringArray(
+					sp.getString(Constants.CONFIG_KEY_SERVERS_IPV6,
+							CommonUtil.translateStringArray(getIpv6ServerIps())));
+			int[] v6Ports = CommonUtil.parsePorts(sp.getString(Constants.CONFIG_KEY_PORTS_IPV6,
+					CommonUtil.translateIntArray(getIpv6Ports())));
+
+			updateAll(cachedServerRegion, serverIps, ports, serverV6Ips, v6Ports);
+			mServerIpsLastUpdatedTime = sp.getLong(Constants.CONFIG_SERVERS_LAST_UPDATED_TIME, 0);
+		}
 	}
 
 	@Override

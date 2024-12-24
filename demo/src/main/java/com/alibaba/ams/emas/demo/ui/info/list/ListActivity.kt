@@ -39,8 +39,8 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
                 kListItemTypeCacheTtl -> getString(R.string.ttl_cache_list)
                 kListItemTypeHostWithFixedIP -> getString(R.string.host_fixed_ip_list)
                 kListItemPreResolve -> getString(R.string.pre_resolve_list)
-                kListItemBatchResolve -> getString(R.string.batch_resolve_list)
                 kListItemTypeBlackList -> getString(R.string.host_black_list)
+                kListItemBatchResolve -> getString(R.string.batch_resolve_list)
                 else -> getString(R.string.ip_probe_list)
             }
         }
@@ -173,28 +173,23 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
                 val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
                 editText.hint = getString(R.string.add_batch_resolve_hint)
                 val ipTypeGroup = input.findViewById<RadioGroup>(R.id.ip_type)
-
                 var view = createIpTypeRadio(this)
                 view.text = "IPv4"
                 view.isChecked = true
                 view.tag = 0
                 ipTypeGroup.addView(view)
-
                 view = createIpTypeRadio(this)
                 view.text = "IPv6"
                 view.tag = 1
                 ipTypeGroup.addView(view)
-
                 view = createIpTypeRadio(this)
                 view.text = "IPv4&IPv6"
                 view.tag = 2
                 ipTypeGroup.addView(view)
-
                 view = createIpTypeRadio(this)
                 view.text = "自动判断IP类型"
                 view.tag = 3
                 ipTypeGroup.addView(view)
-
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle(getString(R.string.add_batch_resolve))
                     .setView(input)

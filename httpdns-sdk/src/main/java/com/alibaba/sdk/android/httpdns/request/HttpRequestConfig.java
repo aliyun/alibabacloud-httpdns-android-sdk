@@ -1,5 +1,6 @@
 package com.alibaba.sdk.android.httpdns.request;
 
+import android.text.TextUtils;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
@@ -89,6 +90,10 @@ public class HttpRequestConfig {
 
     public String url() {
         if (mIpType == RequestIpType.v6) {
+            //域名兜底，这里需要对域名做特殊处理
+            if (!TextUtils.isEmpty(mIp) && mIp.contains(".")) {
+                return mSchema + mIp + ":" + mPort + mPath;
+            }
             return mSchema + "[" + mIp + "]" + ":" + mPort + mPath;
         } else {
             return mSchema + mIp + ":" + mPort + mPath;
