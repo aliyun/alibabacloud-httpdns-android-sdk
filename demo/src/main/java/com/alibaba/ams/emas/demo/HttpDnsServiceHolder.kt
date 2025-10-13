@@ -2,6 +2,8 @@ package com.alibaba.ams.emas.demo
 
 import android.content.Context
 import android.text.TextUtils
+import com.alibaba.ams.emas.demo.constant.KEY_ENABLE_AUTH_MODE
+import com.alibaba.ams.emas.demo.constant.KEY_SECRET_KEY_SET_BY_CONFIG
 import com.alibaba.sdk.android.httpdns.HttpDns
 import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.aliyun.ams.httpdns.demo.BuildConfig
@@ -14,13 +16,19 @@ object HttpDnsServiceHolder {
 
     fun getHttpDnsService(context: Context) : HttpDnsService? {
         val dnsService = if (!TextUtils.isEmpty(BuildConfig.ACCOUNT_ID)) {
-            if (!TextUtils.isEmpty(BuildConfig.SECRET_KEY)) HttpDns.getService(
-                context,
-                BuildConfig.ACCOUNT_ID, BuildConfig.SECRET_KEY
-            ) else HttpDns.getService(
-                context,
-                BuildConfig.ACCOUNT_ID
-            )
+            val secretKeySetByConfig = getAccountPreference(context).getBoolean(KEY_SECRET_KEY_SET_BY_CONFIG, true)
+            if (secretKeySetByConfig) {
+                HttpDns.getService(BuildConfig.ACCOUNT_ID)
+            } else {
+                val authMode = getAccountPreference(context).getBoolean(KEY_ENABLE_AUTH_MODE, true)
+                if (authMode && !TextUtils.isEmpty(BuildConfig.SECRET_KEY)) HttpDns.getService(
+                    context,
+                    BuildConfig.ACCOUNT_ID, BuildConfig.SECRET_KEY
+                ) else HttpDns.getService(
+                    context,
+                    BuildConfig.ACCOUNT_ID
+                )
+            }
         } else null
 
         return dnsService

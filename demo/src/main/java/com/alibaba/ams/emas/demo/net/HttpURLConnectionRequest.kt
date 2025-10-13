@@ -53,6 +53,7 @@ class HttpURLConnectionRequest(private val context: Context, private val request
         var ipURL: String? = null
         dnsService?.let {
             //替换为最新的api
+            Log.d("HttpURLConnection", "start lookup $host via $resolveMethod")
             var httpDnsResult = HTTPDNSResult("", null, null, null, false, false)
             if (resolveMethod == "getHttpDnsResultForHostSync(String host, RequestIpType type)") {
                 httpDnsResult = if (isSdns) {
@@ -82,7 +83,7 @@ class HttpURLConnectionRequest(private val context: Context, private val request
                 }
             }
 
-            Log.d("httpdns", "httpdns $host 解析结果 $httpDnsResult")
+            Log.d("HttpURLConnection", "httpdns $host 解析结果 $httpDnsResult")
             val ipStackType = HttpDnsNetworkDetector.getInstance().getNetType(context)
             val isV6 = ipStackType == NetType.v6 || ipStackType == NetType.both
             val isV4 = ipStackType == NetType.v4 || ipStackType == NetType.both

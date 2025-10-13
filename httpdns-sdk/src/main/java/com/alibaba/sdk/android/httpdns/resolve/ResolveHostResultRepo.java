@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.alibaba.sdk.android.httpdns.CacheTtlChanger;
-import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HTTPDNSResultWrapper;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.cache.HostRecord;
 import com.alibaba.sdk.android.httpdns.cache.RecordDBHelper;
@@ -26,6 +26,9 @@ public class ResolveHostResultRepo {
 	private final ResolveHostCacheGroup mCacheGroup;
 	private CacheTtlChanger mCacheTtlChanger;
 	private final ArrayList<String> mHostListWhichIpFixed = new ArrayList<>();
+	private volatile boolean mFinishReadFromDb = false;
+	private final Object mDbLock = new Object();
+	private long mExpiredThresholdMillis = 0L;
 
 	public ResolveHostResultRepo(HttpDnsConfig config, IPRankingService ipIPRankingService,
 								 RecordDBHelper dbHelper, ResolveHostCacheGroup cacheGroup) {
@@ -35,10 +38,35 @@ public class ResolveHostResultRepo {
 		this.mCacheGroup = cacheGroup;
 	}
 
+	public void ensureReadFromDB() {
+		if (!mEnableCache) {
+			return;
+		}
+
+		if (mFinishReadFromDb) {
+			return;
+		}
+
+		synchronized (mDbLock) {
+			if (mFinishReadFromDb) {
+				return;
+			}
+
+			readFromDB(mExpiredThresholdMillis);
+			mFinishReadFromDb = true;
+		}
+	}
+
 	private void readFromDB(long expiredThresholdMillis) {
 		final String region = mHttpDnsConfig.getRegion();
 		List<HostRecord> records = mDBHelper.readFromDb(region);
 		for (HostRecord record : records) {
+
+			// 过期缓存不加载到内存中
+			if (System.currentTimeMillis() >= record.getQueryTime() + record.getTtl() * 1000L + expiredThresholdMillis) {
+				continue;
+			}
+
 			if (record.getIps() == null || record.getIps().length == 0) {
 				// 空解析，按照ttl来，不区分是否来自数据库
 				record.setFromDB(false);
@@ -59,7 +87,7 @@ public class ResolveHostResultRepo {
 		ArrayList<HostRecord> expired = new ArrayList<>();
 		for (HostRecord record : records) {
 			//达到过期阈值
-			if (System.currentTimeMillis() > record.getQueryTime() + record.getTtl() * 1000L + expiredThresholdMillis) {
+			if (System.currentTimeMillis() >= record.getQueryTime() + record.getTtl() * 1000L + expiredThresholdMillis) {
 				expired.add(record);
 			}
 		}
@@ -86,7 +114,7 @@ public class ResolveHostResultRepo {
 	}
 
 	private HostRecord save(String region, String host, RequestIpType type, String extra,
-							String cacheKey, String[] ips, int ttl) {
+							String cacheKey, String[] ips, int ttl, String serverIp, String noIpCode) {
 
 		if (mCacheTtlChanger != null) {
 			ttl = mCacheTtlChanger.changeCacheTtl(host, type, ttl);
@@ -97,7 +125,7 @@ public class ResolveHostResultRepo {
 		}
 
 		ResolveHostCache cache = mCacheGroup.getCache(cacheKey);
-		return cache.update(region, host, type, extra, cacheKey, ips, ttl);
+		return cache.update(region, host, type, extra, cacheKey, ips, ttl, serverIp, noIpCode);
 	}
 
 	private void updateInner(String host, RequestIpType type, String cacheKey, String[] ips) {
@@ -119,67 +147,13 @@ public class ResolveHostResultRepo {
 	}
 
 	/**
-	 * 保存解析结果
-	 */
-	public void save(String region, String host, RequestIpType type, String extra, String cacheKey,
-					 ResolveHostResponse response) {
-		final ArrayList<HostRecord> records = new ArrayList<>();
-		switch (type) {
-			case v4:
-				HostRecord v4tmp = save(region, host, RequestIpType.v4, extra, cacheKey,
-					response.getIps(), response.getTtl());
-				if (mEnableCache || mHostListWhichIpFixed.contains(host)
-					|| response.getIps() == null
-					|| response.getIps().length == 0) {
-					records.add(v4tmp);
-				}
-				break;
-			case v6:
-				HostRecord v6tmp = save(region, host, RequestIpType.v6, extra, cacheKey,
-					response.getIpsV6(), response.getTtl());
-				if (mEnableCache || mHostListWhichIpFixed.contains(host)
-					|| response.getIpsV6() == null || response.getIpsV6().length == 0) {
-					records.add(v6tmp);
-				}
-				break;
-			case both:
-				HostRecord v4Record = save(region, host, RequestIpType.v4, extra, cacheKey,
-					response.getIps(), response.getTtl());
-				HostRecord v6Record = save(region, host, RequestIpType.v6, extra, cacheKey,
-					response.getIpsV6(), response.getTtl());
-				if (mEnableCache || mHostListWhichIpFixed.contains(host) || (
-					(response.getIps() == null || response.getIps().length == 0) && (
-						response.getIpsV6() == null || response.getIpsV6().length == 0))) {
-					records.add(v4Record);
-					records.add(v6Record);
-				} else if (response.getIps() == null || response.getIps().length == 0) {
-					records.add(v4Record);
-				} else if (response.getIpsV6() == null || response.getIpsV6().length == 0) {
-					records.add(v6Record);
-				}
-				break;
-		}
-		if (records.size() > 0) {
-			try {
-				mHttpDnsConfig.getDbWorker().execute(new Runnable() {
-					@Override
-					public void run() {
-						mDBHelper.insertOrUpdate(records);
-					}
-				});
-			} catch (Exception ignored) {
-			}
-		}
-	}
-
-	/**
 	 * 保存预解析结果
 	 */
-	public void save(String region, RequestIpType type, BatchResolveHostResponse resolveHostResponse) {
+	public void save(String region, ResolveHostResponse resolveHostResponse, String cacheKey) {
 		final ArrayList<HostRecord> records = new ArrayList<>();
-		for (BatchResolveHostResponse.HostItem item : resolveHostResponse.getItems()) {
-			HostRecord record = save(region, item.getHost(), item.getIpType(), null, null,
-				item.getIps(), item.getTtl());
+		for (ResolveHostResponse.HostItem item : resolveHostResponse.getItems()) {
+			HostRecord record = save(region, item.getHost(), item.getIpType(), item.getExtra(), cacheKey,
+				item.getIps(), item.getTtl(), resolveHostResponse.getServerIp(), item.getNoIpCode());
 			if (mEnableCache
 				|| mHostListWhichIpFixed.contains(item.getHost())
 				|| (item.getIps() == null || item.getIps().length == 0)
@@ -220,7 +194,9 @@ public class ResolveHostResultRepo {
 	/**
 	 * 获取之前保存的解析结果
 	 */
-	public HTTPDNSResult getIps(String host, RequestIpType type, String cacheKey) {
+	public HTTPDNSResultWrapper getIps(String host, RequestIpType type, String cacheKey) {
+		ensureReadFromDB();
+
 		ResolveHostCache cache = mCacheGroup.getCache(cacheKey);
 		return cache.getResult(host, type);
 	}
@@ -283,8 +259,7 @@ public class ResolveHostResultRepo {
 	 * 获取当前所有已缓存结果的域名
 	 */
 	public HashMap<String, RequestIpType> getAllHostWithoutFixedIP() {
-		HashMap<String, RequestIpType> result = mCacheGroup.getCache(null)
-			.getAllHostNotEmptyResult();
+		HashMap<String, RequestIpType> result = mCacheGroup.getAllHostFromNetworkCaches();
 		for (String host : mHostListWhichIpFixed) {
 			result.remove(host);
 		}
@@ -296,11 +271,12 @@ public class ResolveHostResultRepo {
 	 */
 	public void setCachedIPEnabled(boolean enable, long expiredThresholdMillis) {
 		mEnableCache = enable;
+		mExpiredThresholdMillis = expiredThresholdMillis;
 		try {
 			mHttpDnsConfig.getDbWorker().execute(new Runnable() {
 				@Override
 				public void run() {
-					readFromDB(expiredThresholdMillis);
+					ensureReadFromDB();
 				}
 			});
 		} catch (Throwable ignored) {
@@ -325,4 +301,13 @@ public class ResolveHostResultRepo {
 			this.mHostListWhichIpFixed.addAll(hostListWhichIpFixed);
 		}
 	}
+
+    /**
+     * 获取缓存组，供外部访问网络缓存
+     *
+     * @return 缓存组
+     */
+    public ResolveHostCacheGroup getCacheGroup() {
+        return mCacheGroup;
+    }
 }

@@ -49,6 +49,7 @@ public class HttpRequest<T> {
 		BufferedReader streamReader = null;
 
 		long start = System.currentTimeMillis();
+		String serverIp = requestConfig.getIp();
 		String url = requestConfig.url();
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("request url " + url);
@@ -57,6 +58,8 @@ public class HttpRequest<T> {
 			conn = (HttpURLConnection)new URL(url).openConnection();
 			conn.setReadTimeout(requestConfig.getTimeout());
 			conn.setConnectTimeout(requestConfig.getTimeout());
+			//设置通用UA
+			conn.setRequestProperty("User-Agent", requestConfig.getUA());
 			if (conn instanceof HttpsURLConnection) {
 				((HttpsURLConnection)conn).setHostnameVerifier(new HostnameVerifier() {
 					@Override
@@ -82,7 +85,7 @@ public class HttpRequest<T> {
 				if (HttpDnsLog.isPrint()) {
 					HttpDnsLog.d("request success " + responseStr);
 				}
-				return translator.parse(responseStr);
+				return translator.parse(serverIp, responseStr);
 			}
 		} catch (Throwable e) {
 			long cost = System.currentTimeMillis() - start;

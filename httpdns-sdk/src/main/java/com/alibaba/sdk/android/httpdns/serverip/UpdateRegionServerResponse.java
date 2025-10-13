@@ -1,5 +1,7 @@
 package com.alibaba.sdk.android.httpdns.serverip;
 
+import com.alibaba.sdk.android.httpdns.observable.ObservableConfig;
+
 import java.util.Arrays;
 
 import org.json.JSONArray;
@@ -15,6 +17,7 @@ public class UpdateRegionServerResponse {
 	private String[] mServerIpv6s;
 	private int[] mServerPorts;
 	private int[] mServerIpv6Ports;
+	private ObservableConfig mObservableConfig;
 
 	public UpdateRegionServerResponse(String[] serverIps, String[] serverIpv6s, int[] serverPorts,
 									  int[] serverIpv6Ports) {
@@ -26,12 +29,13 @@ public class UpdateRegionServerResponse {
 	}
 
 	public UpdateRegionServerResponse(boolean enable, String[] serverIps, String[] serverIpv6s,
-									  int[] serverPorts, int[] serverIpv6Ports) {
+									  int[] serverPorts, int[] serverIpv6Ports, ObservableConfig observableConfig) {
 		this.mEnable = enable;
 		this.mServerIps = serverIps;
 		this.mServerIpv6s = serverIpv6s;
 		this.mServerPorts = serverPorts;
 		this.mServerIpv6Ports = serverIpv6Ports;
+		mObservableConfig = observableConfig;
 	}
 
 	public String[] getServerIps() {
@@ -68,6 +72,10 @@ public class UpdateRegionServerResponse {
 
 	public boolean isEnable() {
 		return mEnable;
+	}
+
+	public ObservableConfig getObservableConfig() {
+		return mObservableConfig;
 	}
 
 	public static UpdateRegionServerResponse fromResponse(String response) throws JSONException {
@@ -112,7 +120,13 @@ public class UpdateRegionServerResponse {
 				v6Ports[i] = ipsArray.optInt(i);
 			}
 		}
-		return new UpdateRegionServerResponse(enable, ips, ipv6s, ports, v6Ports);
+
+		ObservableConfig observableConfig = null;
+		if (jsonObject.has("statistics")) {
+			JSONObject statistics = jsonObject.optJSONObject("statistics");
+			observableConfig = ObservableConfig.fromJson(statistics);
+		}
+		return new UpdateRegionServerResponse(enable, ips, ipv6s, ports, v6Ports, observableConfig);
 	}
 
 	@Override

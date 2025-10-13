@@ -1,146 +1,214 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
-import java.util.Arrays;
+import android.text.TextUtils;
 
-import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
+import com.alibaba.sdk.android.httpdns.RequestIpType;
+import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 域名解析服务返回的数据结构
+ * 解析的结果
  */
 public class ResolveHostResponse {
-	private final String mHostName;
-	private final String[] mIps;
-	private final String[] mIpsV6;
-	private final int mTtl;
-	private final String mExtra;
 
-	/**
-	 * 数据解析
-	 */
-	public static ResolveHostResponse fromResponse(String jsonString) throws JSONException {
-		JSONObject jsonObject = new JSONObject(jsonString);
-		String hostName = jsonObject.getString("host");
-		String[] ips = null;
-		String[] ipsv6 = null;
-		String extra = null;
-		int ttl = 0;
-		try {
-			if (jsonObject.has("ips")) {
-				JSONArray ipsArray = jsonObject.getJSONArray("ips");
-				int len = ipsArray.length();
-				ips = new String[len];
-				for (int i = 0; i < len; i++) {
-					ips[i] = ipsArray.getString(i);
-				}
+	private final ArrayList<HostItem> mHostItems;
+	private String mServerIp;
+
+	public ResolveHostResponse(ArrayList<HostItem> items, String serverIp) {
+		this.mHostItems = items;
+		mServerIp = serverIp;
+	}
+
+	public HostItem getHostItem(String host, RequestIpType type) {
+		for (HostItem item : mHostItems) {
+			if (item.mHost.equals(host) && item.mIpType == type) {
+				return item;
 			}
-			// ipv6解析逻辑
-			if (jsonObject.has("ipsv6")) {
-				JSONArray ipsv6Array = jsonObject.getJSONArray("ipsv6");
-				if (ipsv6Array.length() != 0) {
-					ipsv6 = new String[ipsv6Array.length()];
-					for (int i = 0; i < ipsv6Array.length(); i++) {
-						ipsv6[i] = ipsv6Array.getString(i);
-					}
-				}
-			}
-			//额外参数解析逻辑
-			if (jsonObject.has("extra")) {
-				extra = jsonObject.getString("extra");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		ttl = jsonObject.getInt("ttl");
-		return new ResolveHostResponse(hostName, ips, ipsv6, ttl, extra);
+		return null;
 	}
 
-	public static ResolveHostResponse createEmpty(String host, int ttl) {
-		return new ResolveHostResponse(host, null, null, ttl, null);
+	public List<HostItem> getItems() {
+		return mHostItems;
 	}
 
-	public ResolveHostResponse(String hostName, String[] ips, String[] ipsv6, int ttl,
-							   String extra) {
-		this.mHostName = hostName;
-		if (ips != null) {
-			this.mIps = ips;
-		} else {
-			this.mIps = new String[0];
-		}
-		if (ipsv6 != null) {
-			this.mIpsV6 = ipsv6;
-		} else {
-			this.mIpsV6 = new String[0];
-		}
-		if (ttl > 0) {
-			this.mTtl = ttl;
-		} else {
-			this.mTtl = 60;
-		}
-		this.mExtra = extra;
-	}
-
-	public String getHostName() {
-		return mHostName;
-	}
-
-	public String[] getIps() {
-		return mIps;
-	}
-
-	public String[] getIpsV6() {
-		return mIpsV6;
-	}
-
-	public int getTtl() {
-		return mTtl;
-	}
-
-	public String getExtras() {
-		return mExtra;
+	public String getServerIp() {
+		return mServerIp;
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder ret = new StringBuilder(
-            "host: " + mHostName + " ip cnt: " + mIps.length + " ttl: "
-                + mTtl);
-        for (String ip : mIps) {
-            ret.append("\n ip: ").append(ip);
-        }
-        ret.append("\n ipv6 cnt: ").append(mIpsV6.length);
-        for (String s : mIpsV6) {
-            ret.append("\n ipv6: ").append(s);
-        }
-        ret.append("\n extra: ").append(mExtra);
-
+		StringBuilder ret = new StringBuilder();
+		if (mHostItems != null) {
+			for (int i = 0; i < mHostItems.size(); i++) {
+				ret.append(mHostItems.get(i).toString());
+				if (i != mHostItems.size() - 1) {
+					ret.append("\n");
+				}
+			}
+		}
 		return ret.toString();
 	}
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
+	public static class HostItem {
+		private final String mHost;
+		private final RequestIpType mIpType;
+		private final String[] mIps;
+		private final int mTtl;
+
+		private final String mExtra;
+
+		private final String noIpCode;
+
+		public HostItem(String host, RequestIpType type, String[] ips, int ttl, String extra, String noIpCode) {
+			this.mHost = host;
+			this.mIpType = type;
+			this.mIps = ips;
+			if (ttl <= 0) {
+				this.mTtl = 60;
+			} else {
+				this.mTtl = ttl;
+			}
+			this.mExtra = extra;
+			this.noIpCode = noIpCode;
 		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
+
+		public String getHost() {
+			return mHost;
 		}
-		ResolveHostResponse that = (ResolveHostResponse)o;
-		return mTtl == that.mTtl &&
-			mHostName.equals(that.mHostName) &&
-			Arrays.equals(mIps, that.mIps) &&
-			Arrays.equals(mIpsV6, that.mIpsV6) &&
-			CommonUtil.equals(mExtra, that.mExtra);
+
+		public RequestIpType getIpType() {
+			return mIpType;
+		}
+
+		public String[] getIps() {
+			return mIps;
+		}
+
+		public int getTtl() {
+			return mTtl;
+		}
+
+		public String getExtra() {
+			return mExtra;
+		}
+
+		public String getNoIpCode() {
+			return noIpCode;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder ret = new StringBuilder(
+					"host: " + mHost + " ip cnt: " + (mIps != null ? mIps.length : 0) + " ttl: "
+							+ mTtl);
+			if (mIps != null) {
+				for (String ip : mIps) {
+					ret.append("\n ip: ").append(ip);
+				}
+			}
+
+			ret.append("\n extra: ").append(mExtra);
+			ret.append("\n noIpCode: ").append(noIpCode);
+
+			return ret.toString();
+		}
 	}
 
-	@Override
-	public int hashCode() {
-		int result = Arrays.hashCode(new Object[] {mHostName, mTtl, mExtra});
-		result = 31 * result + Arrays.hashCode(mIps);
-		result = 31 * result + Arrays.hashCode(mIpsV6);
-		return result;
+	public static ResolveHostResponse fromResponse(String serverIp, String body) throws JSONException {
+
+		ArrayList<HostItem> items = new ArrayList<>();
+		JSONObject jsonObject = new JSONObject(body);
+
+		if (jsonObject.has("answers")) {
+			JSONArray answers = jsonObject.getJSONArray("answers");
+			for (int i = 0; i < answers.length(); i++) {
+				JSONObject answer = answers.getJSONObject(i);
+				String hostName = null;
+				int ttl = 0;
+				String extra = null;
+				String[] ips = null;
+				String[] ipsv6 = null;
+				String noIpCode = null;
+				if (answer.has("dn")) {
+					hostName = answer.getString("dn");
+				}
+
+				if (answer.has("v4")) {
+					JSONObject ipv4 = answer.getJSONObject("v4");
+					if (ipv4.has("ips")) {
+						JSONArray ipArray = ipv4.getJSONArray("ips");
+						if (ipArray.length() != 0) {
+							ips = new String[ipArray.length()];
+							for (int j = 0; j < ipArray.length(); j++) {
+								ips[j] = ipArray.getString(j);
+							}
+						}
+					}
+					if (ipv4.has("ttl")) {
+						ttl = ipv4.getInt("ttl");
+					}
+					if (ipv4.has("extra")) {
+						extra = ipv4.getString("extra");
+					}
+					if (ipv4.has("no_ip_code")) {
+						noIpCode = ipv4.getString("no_ip_code");
+					}
+					items.add(new HostItem(hostName, RequestIpType.v4, ips, ttl, extra, noIpCode));
+					if (!TextUtils.isEmpty(noIpCode)) {
+						HttpDnsLog.w("RESOLVE FAIL, HOST:" + hostName + ", QUERY:4, "
+								+ "Msg:" + noIpCode);
+					}
+				}
+				if (answer.has("v6")) {
+					JSONObject ipv6 = answer.getJSONObject("v6");
+					if (ipv6.has("ips")) {
+						JSONArray ipArray = ipv6.getJSONArray("ips");
+						if (ipArray.length() != 0) {
+							ipsv6 = new String[ipArray.length()];
+							for (int j = 0; j < ipArray.length(); j++) {
+								ipsv6[j] = ipArray.getString(j);
+							}
+						}
+					}
+					if (ipv6.has("ttl")) {
+						ttl = ipv6.getInt("ttl");
+					}
+					if (ipv6.has("extra")) {
+						extra = ipv6.getString("extra");
+					}
+					if (ipv6.has("no_ip_code")) {
+						noIpCode = ipv6.getString("no_ip_code");
+					}
+					items.add(new HostItem(hostName, RequestIpType.v6, ipsv6, ttl, extra, noIpCode));
+					if (!TextUtils.isEmpty(noIpCode)) {
+						HttpDnsLog.w("RESOLVE FAIL, HOST:" + hostName + ", QUERY:6, "
+								+ "Msg:" + noIpCode);
+					}
+				}
+			}
+
+		}
+		return new ResolveHostResponse(items, serverIp);
+	}
+
+	public static ResolveHostResponse createEmpty(List<String> hostList, RequestIpType type,
+                                                  int ttl) {
+		ArrayList<HostItem> list = new ArrayList<>();
+		for (String host : hostList) {
+			if (type == RequestIpType.v4 || type == RequestIpType.both) {
+				list.add(new HostItem(host, RequestIpType.v4, null, ttl, null, null));
+			}
+			if (type == RequestIpType.v6 || type == RequestIpType.both) {
+				list.add(new HostItem(host, RequestIpType.v6, null, ttl, null, null));
+			}
+		}
+		return new ResolveHostResponse(list, "");
 	}
 }

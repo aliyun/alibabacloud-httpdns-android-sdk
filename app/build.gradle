@@ -3,12 +3,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    namespace 'com.aliyun.ams.httpdns.demo'
+    compileSdkVersion 34
     buildToolsVersion "30.0.2"
     defaultConfig {
         applicationId "com.aliyun.ams.httpdns.demo2"
-        minSdkVersion 14
-        targetSdkVersion 30
+        minSdkVersion 19
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

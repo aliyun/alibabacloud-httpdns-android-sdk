@@ -1,6 +1,11 @@
 .DS_Store
 *.swp
 
+# Kiro IDE
+.kiro/
+
+# VSCode
+.vscode/
 
 # Gradle
 build

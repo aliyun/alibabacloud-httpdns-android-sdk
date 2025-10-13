@@ -6,6 +6,7 @@ import com.alibaba.sdk.android.httpdns.request.HttpException;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestWatcher;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
+import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 /**
  * 请求失败时，切换当前Region的服务IP，服务IP都切换过，更新服务IP
@@ -70,7 +71,7 @@ public class ShiftServerWatcher implements HttpRequestWatcher.Watcher {
 
 			// 所有服务IP都尝试过了，通知上层进一步处理
 			if (isBackToFirstServer && mScheduleService != null) {
-				mScheduleService.updateRegionServerIps();
+				mScheduleService.updateRegionServerIps(Constants.UPDATE_REGION_SERVER_SCENES_SERVER_UNAVAILABLE);
 			}
 			if (mStatusControl != null) {
 				mStatusControl.turnDown();

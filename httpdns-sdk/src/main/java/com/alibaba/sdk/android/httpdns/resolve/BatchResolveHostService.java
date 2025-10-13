@@ -1,10 +1,11 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
-import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HTTPDNSResultWrapper;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.impl.HostResolveLocker;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
+import com.alibaba.sdk.android.httpdns.net.NetworkStateManager;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingCallback;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingService;
 import com.alibaba.sdk.android.httpdns.request.HttpException;
@@ -43,8 +44,8 @@ public class BatchResolveHostService {
 	/**
 	 * 批量解析域名
 	 *
-	 * @param hostList
-	 * @param type
+	 * @param hostList 待解析域名列表
+	 * @param type 解析类型
 	 */
 	public void batchResolveHostAsync(final List<String> hostList, final RequestIpType type) {
 		if (HttpDnsLog.isPrint()) {
@@ -67,24 +68,23 @@ public class BatchResolveHostService {
 			}
 
 			// 过滤掉有缓存的域名
-
+			String networkKey = NetworkStateManager.getInstance().getCurrentNetworkKey();
 			if (type == RequestIpType.v4) {
-				HTTPDNSResult result = mResultRepo.getIps(host, type, null);
+				HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, networkKey);
 				if (result == null || result.isExpired()) {
 					// 需要解析
 					hostsRequestV4.add(host);
 				}
 			} else if (type == RequestIpType.v6) {
-				HTTPDNSResult result = mResultRepo.getIps(host, type, null);
+				HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, networkKey);
 				if (result == null || result.isExpired()) {
 					// 需要解析
 					hostsRequestV6.add(host);
 				}
 			} else {
-				HTTPDNSResult resultV4 = mResultRepo.getIps(host, RequestIpType.v4, null);
-				HTTPDNSResult resultV6 = mResultRepo.getIps(host, RequestIpType.v6, null);
-				if ((resultV4 == null || resultV4.isExpired()) && (
-					resultV6 == null || resultV6.isExpired())) {
+				HTTPDNSResultWrapper resultV4 = mResultRepo.getIps(host, RequestIpType.v4, networkKey);
+				HTTPDNSResultWrapper resultV6 = mResultRepo.getIps(host, RequestIpType.v6, networkKey);
+				if ((resultV4 == null || resultV4.isExpired()) && (resultV6 == null || resultV6.isExpired())) {
 					// 都需要解析
 					hostsRequestBoth.add(host);
 				} else if (resultV4 == null || resultV4.isExpired()) {
@@ -100,7 +100,7 @@ public class BatchResolveHostService {
 	}
 
 	private void batchResolveHost(ArrayList<String> hostList, final RequestIpType type) {
-		if (hostList == null || hostList.size() == 0) {
+		if (hostList == null || hostList.isEmpty()) {
 			return;
 		}
 		ArrayList<String> allHosts = new ArrayList<>(hostList);
@@ -127,25 +127,27 @@ public class BatchResolveHostService {
 			}
 			final String region = mHttpDnsConfig.getRegion();
 			mRequestHandler.requestResolveHost(targetHost, type,
-				new RequestCallback<BatchResolveHostResponse>() {
+				new RequestCallback<ResolveHostResponse>() {
 					@Override
-					public void onSuccess(final BatchResolveHostResponse resolveHostResponse) {
+					public void onSuccess(final ResolveHostResponse resolveHostResponse) {
 						if (HttpDnsLog.isPrint()) {
 							HttpDnsLog.d("resolve hosts for " + targetHost.toString() + " " + type
 								+ " return " + resolveHostResponse.toString());
 						}
-						mResultRepo.save(region, type, resolveHostResponse);
+						String networkKey = NetworkStateManager.getInstance().getCurrentNetworkKey();
+						mResultRepo.save(region, resolveHostResponse, networkKey);
 						if (type == RequestIpType.v4 || type == RequestIpType.both) {
-							for (final BatchResolveHostResponse.HostItem item :
-								resolveHostResponse.getItems()) {
+							for (final ResolveHostResponse.HostItem item
+									: resolveHostResponse.getItems()) {
 								if (item.getIpType() == RequestIpType.v4) {
 									mIpIPRankingService.probeIpv4(item.getHost(), item.getIps(),
 										new IPRankingCallback() {
 											@Override
 											public void onResult(String host, String[] sortedIps) {
+												String networkKey = NetworkStateManager.getInstance().getCurrentNetworkKey();
 												mResultRepo.update(item.getHost(),
 													item.getIpType(),
-													null, sortedIps);
+														networkKey, sortedIps);
 											}
 										});
 								}
@@ -160,11 +162,24 @@ public class BatchResolveHostService {
 					public void onFail(Throwable throwable) {
 						HttpDnsLog.w("resolve hosts for " + targetHost.toString() + " fail",
 							throwable);
+
+						if (throwable instanceof Exception) {
+							String query = "4";
+							if (type == RequestIpType.v6) {
+								query = "6";
+							}else if (type == RequestIpType.both) {
+								query = "4,6";
+							}
+							String errorMsg = (throwable instanceof HttpException) ? throwable.getMessage() : throwable.toString();
+							HttpDnsLog.w("RESOLVE FAIL, HOST:" + targetHost + ", QUERY:" + query
+							+ ", Msg:" + errorMsg);
+						}
 						if (throwable instanceof HttpException
 							&& ((HttpException)throwable).shouldCreateEmptyCache()) {
-							BatchResolveHostResponse emptyResponse = BatchResolveHostResponse.createEmpty(
+							ResolveHostResponse emptyResponse = ResolveHostResponse.createEmpty(
 								targetHost, type, 60 * 60);
-							mResultRepo.save(region, type, emptyResponse);
+							String networkKey = NetworkStateManager.getInstance().getCurrentNetworkKey();
+							mResultRepo.save(region, emptyResponse, networkKey);
 						}
 						for (String host : targetHost) {
 							mAsyncLocker.endResolve(host, type, null);

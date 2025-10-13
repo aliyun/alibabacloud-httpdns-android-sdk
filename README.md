@@ -1,33 +1,10 @@
 # httpdns
 
-请参考官网文档，了解httpdns功能。[https://help.aliyun.com/product/30100.html?spm=a2c4g.750001.list.154.2d0d7b13T0aYuX](https://help.aliyun.com/product/30100.html?spm=a2c4g.750001.list.154.2d0d7b13T0aYuX)
+请参考官网文档，了解httpdns功能。[https://help.aliyun.com/document_detail/435250.html](https://help.aliyun.com/document_detail/435250.html)
 
 ## 注意
 
 productFlavors中normal是中国大陆版本，intl是国际版本，end2end用于单元测试
-
-### 配置初始IP
-请在gradle.properties中配置你所使用账号的初始服务IP，否则无法请求
-```gradle
-# 大陆默认配置
-# 默认 region
-REGION=""
-# 默认 初始IP（v4）InputYourInitServerIp 替换为启动IP, 有几个就放几个
-INIT_SERVERS={"InputYourInitServerIp", "InputYourInitServerIp", "InputYourInitServerIp"}
-# 默认 初始IP（v6）InputYourInitServerIp 替换为启动IP, 有几个就放几个
-IPV6_INIT_SERVERS={"InputYourInitServerIp"}
-# 国际版默认配置
-# 默认 region
-INTL_REGION="sg"
-# 默认 初始IP（v4）InputYourInitServerIp 替换为启动IP, 有几个就放几个
-INTL_INIT_SERVERS={"InputYourInitServerIp", "InputYourInitServerIp", "InputYourInitServerIp"}
-# 默认 初始IP（v6）InputYourInitServerIp 替换为启动IP, 有几个就放几个
-INTL_IPV6_INIT_SERVERS={"InputYourInitServerIp"}
-# 缺省 调度IP v4，在初始IP不可用时，启用。InputYourDefaultUpdateServerIp 替换为兜底调度IP, 有几个就放几个
-INTL_UPDATE_SERVERS={"InputYourDefaultUpdateServerIp"}
-# 缺省 调度IP v6，在初始IP不可用时，启用。InputYourDefaultUpdateServerIp 替换为兜底调度IP, 有几个就放几个
-INTL_IPV6_UPDATE_SERVERS={"InputYourDefaultUpdateServerIp"}
-```
 
 ### 配置Demo测试账号
 
@@ -44,8 +21,9 @@ app module是旧版demo，测试时需要在 MyApp.java 中需要配置测试账
 demo module中是全新module，使用Kotlin + MVVM开发，功能更丰富，建议测试时使用新demo进行测试，测试时需要在demo/build.gradle中配置测试账号
 
 ```groovy
-buildConfigField "String", "ACCOUNT_ID", "\"请替换为测试用B实例的accountId\""
-buildConfigField "String", "SECRET_KEY", "\"请替换为测试用A实例的secret\""
+buildConfigField "String", "ACCOUNT_ID", "\"请替换为测试用实例的accountId\""
+buildConfigField "String", "SECRET_KEY", "\"请替换为测试用实例的secret\""
+buildConfigField "String", "AES_SECRET_KEY", "\"请替换为测试用实例的aes\""
 ```
 
 ### 运行测试case

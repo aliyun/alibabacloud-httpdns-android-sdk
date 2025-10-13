@@ -65,3 +65,4 @@
     public <fields>;
 }
 -keep enum com.alibaba.sdk.android.httpdns.Region {*;}
+-keep class com.alibaba.sdk.android.httpdns.exception.InitException{*;}

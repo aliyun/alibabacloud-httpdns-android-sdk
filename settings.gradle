@@ -47,3 +47,4 @@ dependencyResolutionManagement {
 
 include ':httpdns-sdk'
 include ':demo'
+include ':app'

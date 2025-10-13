@@ -2,6 +2,9 @@ package com.alibaba.sdk.android.httpdns.net;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
+import java.net.InetAddress;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.utils.ThreadUtil;
@@ -14,12 +17,18 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.LinkProperties;
+import android.net.LinkAddress;
+import android.os.Build;
 import android.os.Process;
 
 public class NetworkStateManager {
 	public static final String NONE_NETWORK = "None_Network";
+	private static final String NETWORK_KEY_PREFIX = "emasInner_";
 	private Context mContext;
 	private String mLastConnectedNetwork = NONE_NETWORK;
+	private volatile String mCurrentNetworkKey = NONE_NETWORK;
 	private final ArrayList<OnNetworkChange> mListeners = new ArrayList<>();
 
 	private final ExecutorService mWorker = ThreadUtil.createSingleThreadService("network");
@@ -44,6 +53,24 @@ public class NetworkStateManager {
 			return;
 		}
 		this.mContext = ctx.getApplicationContext();
+		
+		// 立即检测当前网络状态
+		mWorker.execute(() -> {
+			try {
+				String currentNetwork = detectCurrentNetwork();
+				if (!currentNetwork.equals(NONE_NETWORK)) {
+					mLastConnectedNetwork = currentNetwork;
+				}
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.d("[NetworkStateManager.init] - Initial network detected: " + currentNetwork);
+				}
+			} catch (Exception e) {
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.e("[NetworkStateManager.init] - Failed to detect initial network", e);
+				}
+			}
+		});
+
 		BroadcastReceiver bcReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(final Context context, final Intent intent) {
@@ -100,17 +127,83 @@ public class NetworkStateManager {
 			NetworkInfo info = connectivityManager.getActiveNetworkInfo();
 			if (info != null && info.isAvailable() && info.isConnected()) {
 				String name = info.getTypeName();
+				
+				String ipPrefix = getLocalIpPrefix();
+				if (ipPrefix != null) {
+					name = name + "_" + ipPrefix;
+				}
+				// 增加前缀，防止与用户cacheKey冲突
+				mCurrentNetworkKey = (name == null) ? NONE_NETWORK : (NETWORK_KEY_PREFIX + name);
+				
 				if (HttpDnsLog.isPrint()) {
-					HttpDnsLog.d("[detectCurrentNetwork] - Network name:" + name + " subType "
+					HttpDnsLog.d("[detectCurrentNetwork] - Network key:" + mCurrentNetworkKey + " subType "
                         + "name: "
 						+ info.getSubtypeName());
 				}
-				return name == null ? NONE_NETWORK : name;
+				return mCurrentNetworkKey;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		mCurrentNetworkKey = NONE_NETWORK;
 		return NONE_NETWORK;
+	}
+
+	private String getLocalIpPrefix() {
+		try {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+				return null;
+			}
+
+			ConnectivityManager connectivityManager = (ConnectivityManager) mContext
+					.getSystemService(Context.CONNECTIVITY_SERVICE);
+			Network activeNetwork = connectivityManager.getActiveNetwork();
+
+			if (activeNetwork == null) {
+				return null;
+			}
+
+			LinkProperties linkProperties = connectivityManager.getLinkProperties(activeNetwork);
+			if (linkProperties == null) {
+				return null;
+			}
+
+			String ipv6Backup = null;
+			for (LinkAddress linkAddress : linkProperties.getLinkAddresses()) {
+				InetAddress address = linkAddress.getAddress();
+				if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+					continue;
+				}
+
+				if (address instanceof Inet4Address) {
+					String ip = address.getHostAddress();
+					String[] parts = ip.split("\\.");
+					if (parts.length >= 3) {
+						return parts[0] + "." + parts[1] + "." + parts[2];
+					}
+				} else if (address instanceof Inet6Address && ipv6Backup == null) {
+					String ipv6 = address.getHostAddress();
+					if (ipv6.contains("%")) {
+						ipv6 = ipv6.substring(0, ipv6.indexOf("%"));
+					}
+					String[] parts = ipv6.split(":");
+					if (parts.length >= 4) {
+						ipv6Backup = parts[0] + ":" + parts[1] + ":" + parts[2] + ":" + parts[3];
+					}
+				}
+			}
+			return ipv6Backup;
+		} catch (Exception e) {
+			if (HttpDnsLog.isPrint()) {
+				HttpDnsLog.d("[getLocalIpPrefix] - Failed to get IP prefix: " + e.getMessage());
+			}
+		}
+		return null;
+	}
+
+	public String getCurrentNetworkKey() {
+		return mCurrentNetworkKey;
 	}
 
 	public void addListener(OnNetworkChange change) {
@@ -124,6 +217,7 @@ public class NetworkStateManager {
 	public void reset() {
 		mContext = null;
 		mLastConnectedNetwork = NONE_NETWORK;
+		mCurrentNetworkKey = NONE_NETWORK;
 		mListeners.clear();
 	}
 

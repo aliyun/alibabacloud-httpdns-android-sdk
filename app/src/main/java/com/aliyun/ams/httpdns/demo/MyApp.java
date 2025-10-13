@@ -23,8 +23,8 @@ public class MyApp extends Application {
         return instance;
     }
 
-    private final HttpDnsHolder holderA = new HttpDnsHolder("139450", "807a19762f8eaefa8563489baf198535");
-    private final HttpDnsHolder holderB = new HttpDnsHolder("199019");
+    private final HttpDnsHolder holderA = new HttpDnsHolder("请替换为测试用A实例的accountId", "请替换为测试用A实例的secret");
+    private final HttpDnsHolder holderB = new HttpDnsHolder("请替换为测试用B实例的accountId", null);
 
     private HttpDnsHolder current = holderA;
 

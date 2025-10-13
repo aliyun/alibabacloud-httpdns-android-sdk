@@ -11,7 +11,7 @@ import com.aliyun.ams.httpdns.demo.base.BaseActivity;
 
 import java.util.HashMap;
 
-import static com.aliyun.ams.httpdns.demo.HttpDnsActivity.APPLE_URL;
+import static com.aliyun.ams.httpdns.demo.HttpDnsActivity.ALIYUN_URL;
 
 public class SDNSActivity extends BaseActivity {
 
@@ -19,7 +19,7 @@ public class SDNSActivity extends BaseActivity {
     /**
      * 要请求的域名
      */
-    private String host = APPLE_URL;
+    private String host = HttpDnsActivity.ALIYUN_URL;
     /**
      * 要解析的ip类型
      */
@@ -28,7 +28,6 @@ public class SDNSActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
 
         addEditTextEditTextButton("key", "value", "添加全局配置", new OnButtonClickMoreView() {
             @Override
@@ -41,8 +40,7 @@ public class SDNSActivity extends BaseActivity {
 
                 globalParams.put(key, value);
 
-                MyApp.getInstance().getService().setSdnsGlobalParams(globalParams);
-
+                // 注意：SDNS全局参数现在需要通过InitConfig设置，重启应用生效
                 sendLog("添加全局参数 " + key + " : " + value);
             }
         });
@@ -51,11 +49,10 @@ public class SDNSActivity extends BaseActivity {
             @Override
             public void onClick(View v) {
                 globalParams.clear();
-                MyApp.getInstance().getService().clearSdnsGlobalParams();
+                // 注意：SDNS全局参数现在需要通过InitConfig设置，重启应用生效
                 sendLog("清除全局参数");
             }
         });
-
 
         addFourButton("指定v4", new View.OnClickListener() {
             @Override

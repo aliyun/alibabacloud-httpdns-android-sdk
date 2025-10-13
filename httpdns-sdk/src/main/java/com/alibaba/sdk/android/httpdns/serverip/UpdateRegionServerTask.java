@@ -7,22 +7,21 @@ import com.alibaba.sdk.android.httpdns.HttpDnsSettings;
 import com.alibaba.sdk.android.httpdns.NetType;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
-import com.alibaba.sdk.android.httpdns.report.ReportManager;
 import com.alibaba.sdk.android.httpdns.request.HttpRequest;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
-import com.alibaba.sdk.android.httpdns.request.HttpRequestFailWatcher;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestTask;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestWatcher;
 import com.alibaba.sdk.android.httpdns.request.RequestCallback;
 import com.alibaba.sdk.android.httpdns.request.ResponseParser;
 import com.alibaba.sdk.android.httpdns.request.RetryHttpRequest;
+import com.alibaba.sdk.android.httpdns.request.UpdateRegionServerHttpRequestStatusWatcher;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 import static com.alibaba.sdk.android.httpdns.resolve.ResolveHostHelper.getSid;
 
 public class UpdateRegionServerTask {
 
-	public static void updateRegionServer(HttpDnsConfig config, String region,
+	public static void updateRegionServer(HttpDnsConfig config, String region, int scenes,
 										  RequestCallback<UpdateRegionServerResponse> callback) {
 		String path = "/" + config.getAccountId() + "/ss?"
 			+ "platform=android&sdk_version=" + BuildConfig.VERSION_NAME
@@ -54,15 +53,16 @@ public class UpdateRegionServerTask {
 		HttpRequestConfig requestConfig = new HttpRequestConfig(config.getSchema(),
 			servers[0].getServerIp(), servers[0].getPort(config.getSchema()), path,
 			config.getTimeout(), ipType);
+		requestConfig.setUA(config.getUA());
 		HttpRequest<UpdateRegionServerResponse> httpRequest = new HttpRequest<>(requestConfig,
 			new ResponseParser<UpdateRegionServerResponse>() {
 				@Override
-				public UpdateRegionServerResponse parse(String response) throws Throwable {
+				public UpdateRegionServerResponse parse(String serverIp, String response) throws Throwable {
 					return UpdateRegionServerResponse.fromResponse(response);
 				}
 			});
-		httpRequest = new HttpRequestWatcher<>(httpRequest, new HttpRequestFailWatcher(
-			ReportManager.getReportManagerByAccount(config.getAccountId())));
+		httpRequest = new HttpRequestWatcher<>(httpRequest, new UpdateRegionServerHttpRequestStatusWatcher(scenes,
+			config.getObservableManager()));
 		// 增加切换ip，回到初始Ip的逻辑
 		httpRequest = new HttpRequestWatcher<>(httpRequest, new ShiftRegionServerWatcher(servers));
 		// 重试，当前服务Ip和初始服务ip个数

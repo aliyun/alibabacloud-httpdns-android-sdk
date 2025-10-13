@@ -1,7 +1,9 @@
 package com.alibaba.sdk.android.httpdns.request;
 
 import android.text.TextUtils;
+
 import com.alibaba.sdk.android.httpdns.RequestIpType;
+import com.alibaba.sdk.android.httpdns.impl.AESEncryptService;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 /**
@@ -37,6 +39,18 @@ public class HttpRequestConfig {
      */
     private RequestIpType mIpType = RequestIpType.v4;
 
+    private String mUA = "";
+
+    //待解析的域名
+    private String mResolvingHost;
+    //待解析的域名的ip类型
+    private RequestIpType mResolvingIpType;
+    //是不是重试
+    private boolean isRetry = false;
+
+    private boolean isSignMode = false;
+    private AESEncryptService mAESEncryptService;
+
     public HttpRequestConfig(String ip, int port, String path) {
         this.mIp = ip;
         this.mPort = port;
@@ -50,6 +64,16 @@ public class HttpRequestConfig {
         this.mPath = path;
         this.mTimeout = timeout;
         this.mIpType = ipType;
+    }
+
+    public HttpRequestConfig(String schema, String ip, int port, String path, int timeout, RequestIpType ipType, boolean signMode) {
+        this.mSchema = schema;
+        this.mIp = ip;
+        this.mPort = port;
+        this.mPath = path;
+        this.mTimeout = timeout;
+        this.mIpType = ipType;
+        isSignMode = signMode;
     }
 
     public void setSchema(String schema) {
@@ -98,5 +122,48 @@ public class HttpRequestConfig {
         } else {
             return mSchema + mIp + ":" + mPort + mPath;
         }
+    }
+
+    public void setUA(String ua) {
+        mUA = ua;
+    }
+
+    public String getUA() {
+        return mUA;
+    }
+
+    public void setResolvingHost(String host) {
+        mResolvingHost = host;
+    }
+
+    public String getResolvingHost() {
+        return mResolvingHost;
+    }
+
+    public void setResolvingIpType(RequestIpType type) {
+        mResolvingIpType = type;
+    }
+
+    public RequestIpType getResolvingIpType() {
+        return mResolvingIpType;
+    }
+
+    public void setRetry() {
+        isRetry = true;
+    }
+    public boolean isRetry() {
+        return isRetry;
+    }
+
+    public boolean isSignMode() {
+        return isSignMode;
+    }
+
+    public AESEncryptService getAESEncryptService() {
+        return mAESEncryptService;
+    }
+
+    public void setAESEncryptService(AESEncryptService mAESEncryptService) {
+        this.mAESEncryptService = mAESEncryptService;
     }
 }

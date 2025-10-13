@@ -23,10 +23,6 @@ public class HttpDnsInstanceHolder {
     }
 
     public HttpDnsService get(Context context, String account, String secretKey) {
-        if (context == null) {
-            HttpDnsLog.e("init httpdns with null context!!");
-            return mError;
-        }
         if (account == null || account.equals("")) {
             HttpDnsLog.e("init httpdns with emtpy account!!");
             return mError;

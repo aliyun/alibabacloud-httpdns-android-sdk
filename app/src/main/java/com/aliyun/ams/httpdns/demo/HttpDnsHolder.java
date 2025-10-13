@@ -126,7 +126,7 @@ public class HttpDnsHolder {
 
     public void setEnableExpiredIp(final boolean enableExpiredIp) {
         this.enableExpiredIp = enableExpiredIp;
-        getService().setExpiredIPEnabled(enableExpiredIp);
+        // 注意：此配置需要重启应用生效，因为现在通过InitConfig设置
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {
@@ -137,7 +137,7 @@ public class HttpDnsHolder {
 
     public void setEnableCacheIp(final boolean enableCacheIp) {
         this.enableCacheIp = enableCacheIp;
-        getService().setCachedIPEnabled(enableCacheIp);
+        // 注意：此配置需要重启应用生效，因为现在通过InitConfig设置
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {
@@ -148,7 +148,7 @@ public class HttpDnsHolder {
 
     public void setTimeout(final int timeout) {
         this.timeout = timeout;
-        getService().setTimeoutInterval(timeout);
+        // 注意：此配置需要重启应用生效，因为现在通过InitConfig设置
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {
@@ -159,7 +159,7 @@ public class HttpDnsHolder {
 
     public void setEnableHttps(final boolean enableHttps) {
         this.enableHttps = enableHttps;
-        getService().setHTTPSRequestEnabled(enableHttps);
+        // 注意：此配置需要重启应用生效，因为现在通过InitConfig设置
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {
@@ -198,7 +198,7 @@ public class HttpDnsHolder {
             this.ipRankingList = new ArrayList<>();
         }
         this.ipRankingList.add(ipProbeItem);
-        getService().setIPProbeList(ipRankingList);
+        // 注意：此配置需要重启应用生效，因为现在通过InitConfig设置
         SpUtil.writeSp(context, getSpName(accountId), new SpUtil.OnGetSpEditor() {
             @Override
             public void onGetSpEditor(SharedPreferences.Editor editor) {

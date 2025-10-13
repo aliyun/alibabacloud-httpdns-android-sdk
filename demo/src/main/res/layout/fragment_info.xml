@@ -299,6 +299,18 @@
                             android:src="@drawable/ic_arrow_right" />
                     </RelativeLayout>
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
+                        android:onClick="@{() -> viewModel.clearDnsCache()}"
+                        android:padding="18dp"
+                        android:text="@string/clear_dns_cache"
+                        android:textColor="@color/black"
+                        android:textSize="16dp"
+                        android:background="?selectableItemBackground"
+                        />
+
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -17,8 +17,8 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class RecordDBHelper extends SQLiteOpenHelper {
 
-	private static final String DB_NAME = "aliclound_httpdns_";
-	private static final int DB_VERSION = 0x02;
+	private static final String DB_NAME = "aliclound_httpdns_v3_";
+	private static final int DB_VERSION = 0x03;
 
 	static class HOST {
 
@@ -45,6 +45,8 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 		// 旧版本 用于存储网络标识的字段，由于合规的影响，删除了相关代码，此字段变为固定字段，目前已经没有意义
 		static final String COL_SP = "sp";
 
+		static final String COL_NO_IP_CODE = "no_ip_code";
+
 		static final String CREATE_HOST_TABLE_SQL = "CREATE TABLE " + TABLE_NAME + " ("
 			+ COL_ID + " INTEGER PRIMARY KEY,"
 			+ COL_REGION + " TEXT,"
@@ -55,7 +57,8 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 			+ COL_TTL + " INTEGER,"
 			+ COL_EXTRA + " TEXT,"
 			+ COL_CACHE_KEY + " TEXT,"
-			+ COL_SP + " TEXT"
+			+ COL_SP + " TEXT,"
+			+ COL_NO_IP_CODE + " TEXT"
 			+ ");";
 	}
 
@@ -124,6 +127,7 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 						hostRecord.setCacheKey(
 							cursor.getString(cursor.getColumnIndex(HOST.COL_CACHE_KEY)));
 						hostRecord.setFromDB(true);
+						hostRecord.setNoIpCode(cursor.getString(cursor.getColumnIndex(HOST.COL_NO_IP_CODE)));
 						hosts.add(hostRecord);
 					} while (cursor.moveToNext());
 				}
@@ -145,6 +149,10 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 	 * 从数据库删除数据
 	 */
 	public void delete(List<HostRecord> records) {
+		if (records == null || records.isEmpty()) {
+			return;
+		}
+
 		synchronized (mLock) {
 			SQLiteDatabase db = null;
 			try {
@@ -187,6 +195,7 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 					cv.put(HOST.COL_TIME, record.getQueryTime());
 					cv.put(HOST.COL_TYPE, record.getType());
 					cv.put(HOST.COL_TTL, record.getTtl());
+					cv.put(HOST.COL_NO_IP_CODE, record.getNoIpCode());
 
 					if (record.getId() != -1) {
 						db.update(HOST.TABLE_NAME, cv, HOST.COL_ID + " = ?",
@@ -230,6 +239,21 @@ public class RecordDBHelper extends SQLiteOpenHelper {
 				onCreate(db);
 			} catch (Exception e) {
 				HttpDnsLog.w("upgrade db fail " + mAccountId, e);
+			}
+		}
+	}
+
+	@Override
+	public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		if (oldVersion != newVersion) {
+			try {
+				db.beginTransaction();
+				db.execSQL("DROP TABLE IF EXISTS " + HOST.TABLE_NAME + ";");
+				db.setTransactionSuccessful();
+				db.endTransaction();
+				onCreate(db);
+			} catch (Exception e) {
+				HttpDnsLog.w("downgrade db fail " + mAccountId, e);
 			}
 		}
 	}

@@ -1,11 +1,17 @@
 package com.alibaba.sdk.android.httpdns;
 
+import android.app.Application;
+import android.content.Context;
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.alibaba.sdk.android.httpdns.exception.InitException;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
@@ -51,6 +57,11 @@ public class InitConfig {
 	private final boolean mEnableCrashDefend;
 	private final Map<String, String> mSdnsGlobalParams;
 	private final boolean mEnableDegradationLocalDns;
+	private final boolean mEnableObservable;
+	private final String mBizTags;
+	private final String aesSecretKey;
+	private final String secretKey;
+	private final Context context;
 
 	private InitConfig(Builder builder) {
 		mEnableExpiredIp = builder.enableExpiredIp;
@@ -68,6 +79,11 @@ public class InitConfig {
 		mEnableCrashDefend = builder.enableCrashDefend;
 		mSdnsGlobalParams = builder.sdnsGlobalParams;
 		mEnableDegradationLocalDns = builder.enableDegradationLocalDns;
+		mEnableObservable = builder.enableObservable;
+		mBizTags = builder.bizTags;
+		aesSecretKey = builder.aesSecretKey;
+		context = builder.context;
+		secretKey = builder.secretKey;
 	}
 
 	public boolean isEnableExpiredIp() {
@@ -131,6 +147,24 @@ public class InitConfig {
 		return mSdnsGlobalParams;
 	}
 
+	public boolean isEnableObservable() {
+		return mEnableObservable;
+	}
+
+	public String getBizTags() {
+		return mBizTags;
+	}
+
+	public String getAesSecretKey() {
+		return aesSecretKey;
+	}
+
+	public Context getContext() {return context;}
+
+	public String getSecretKey() {
+		return secretKey;
+	}
+
 	public static class Builder {
 		private boolean enableExpiredIp = Constants.DEFAULT_ENABLE_EXPIRE_IP;
 		private boolean enableCacheIp = Constants.DEFAULT_ENABLE_CACHE_IP;
@@ -146,7 +180,12 @@ public class InitConfig {
 		private DegradationFilter degradationFilter = null;
 		private NotUseHttpDnsFilter notUseHttpDnsFilter = null;
 		private boolean enableCrashDefend = false;
+		private boolean enableObservable = true;
 		private Map<String, String> sdnsGlobalParams = null;
+		private String bizTags = null;
+		private String aesSecretKey = null;
+		private Context context = null;
+		private String secretKey = null;
 
 		/**
 		 * 设置是否允许返回超过ttl 的ip
@@ -310,6 +349,95 @@ public class InitConfig {
 		 */
 		public Builder setSdnsGlobalParams(Map<String, String> params) {
 			sdnsGlobalParams = params;
+			return this;
+		}
+
+		public Builder enableObservable(boolean enabled) {
+			enableObservable = enabled;
+			return this;
+		}
+
+		public Builder setBizTags(List<String> tags) {
+			if (tags == null) {
+				return this;
+			}
+
+			if (tags.size() > 5) {
+				throw new InitException("The number of tags cannot be greater than 5");
+			}
+
+			Pattern p = Pattern.compile("[^a-zA-Z0-9-]");
+			Matcher matcher;
+			StringBuilder tmpTag = new StringBuilder();
+			for (int i = 0; i != tags.size(); ++i) {
+				String tag = tags.get(i);
+				if (TextUtils.isEmpty(tag)) {
+					continue;
+				}
+
+				matcher = p.matcher(tag);
+				if (matcher.find()) {
+					throw new InitException("tag can only contain a-z and A-Z and 0-9 and -");
+				}
+
+				if (tmpTag.indexOf(tag) != -1) {
+					//去重
+					continue;
+				}
+
+				tmpTag.append(tag);
+				if (i != tags.size() - 1) {
+					tmpTag.append(",");
+				}
+			}
+
+			int lastCommaIndex = tmpTag.lastIndexOf(",");
+			//最后一位逗号要去掉
+			if (lastCommaIndex == tmpTag.length() - 1) {
+				tmpTag.deleteCharAt(lastCommaIndex);
+			}
+
+			if (tmpTag.length() > 64) {
+				throw new InitException("The length of all tags cannot be greater than 64");
+			}
+
+			bizTags = tmpTag.toString();
+			return this;
+		}
+
+		/**
+		 * 设置aes加密密钥
+		 * @param aesSecretKey 加密密钥
+		 * @return {@link Builder}
+		 */
+		public Builder setAesSecretKey(String aesSecretKey) {
+			this.aesSecretKey = aesSecretKey;
+			return this;
+		}
+
+		/**
+		 * 设置context
+		 * @param context 上下文
+		 * @return {@link Builder}
+		 */
+		public Builder setContext(Context context) {
+			if (context instanceof Application) {
+				this.context = context;
+			} else {
+				if (context != null) {
+					this.context = context.getApplicationContext();
+				}
+			}
+			return this;
+		}
+
+		/**
+		 * 设置加签密钥
+		 * @param secretKey 加签密钥
+		 * @return {@link Builder}
+		 */
+		public Builder setSecretKey(String secretKey) {
+			this.secretKey = secretKey;
 			return this;
 		}
 

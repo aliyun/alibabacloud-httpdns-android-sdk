@@ -354,7 +354,7 @@ public class ServerConfig extends RegionServer implements SpCacheItem {
 		String cachedServerRegion = sp.getString(Constants.CONFIG_CURRENT_SERVER_REGION,
 				getRegion());
 		//初始化region和缓存server region一致的情况，使用缓存的服务IP。否则初始化的region优先级更高
-		if (TextUtils.equals(cachedServerRegion, getRegion())) {
+		if (CommonUtil.regionEquals(cachedServerRegion, getRegion())) {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("restore service ip of " + (TextUtils.isEmpty(cachedServerRegion) ? "default" : cachedServerRegion));
 			}

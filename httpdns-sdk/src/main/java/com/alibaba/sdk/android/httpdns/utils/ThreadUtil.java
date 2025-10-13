@@ -78,6 +78,36 @@ public class ThreadUtil {
 		return new ExecutorServiceWrapper(httpDnsThread);
 	}
 
+	public static ExecutorService createObservableExecutorService() {
+		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(2, 3, 30, TimeUnit.SECONDS,
+				new LinkedBlockingQueue<>(20), new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				Thread thread = new Thread(r, "httpdns_observable" + index++);
+				thread.setPriority(Thread.NORM_PRIORITY - 1);
+				thread.setUncaughtExceptionHandler(new HttpDnsUncaughtExceptionHandler());
+				return thread;
+			}
+		}, new ThreadPoolExecutor.AbortPolicy());
+		httpDnsThread.allowCoreThreadTimeOut(true);
+		return new ExecutorServiceWrapper(httpDnsThread);
+	}
+
+	public static ExecutorService createObservableReportExecutorService() {
+		final ThreadPoolExecutor httpDnsThread = new ThreadPoolExecutor(0, 1, 30, TimeUnit.SECONDS,
+				new SynchronousQueue<>(), new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				Thread thread = new Thread(r, "httpdns_observable_report" + index++);
+				thread.setPriority(Thread.NORM_PRIORITY - 1);
+				thread.setUncaughtExceptionHandler(new HttpDnsUncaughtExceptionHandler());
+				return thread;
+			}
+		}, new ThreadPoolExecutor.AbortPolicy());
+		httpDnsThread.allowCoreThreadTimeOut(true);
+		return new ExecutorServiceWrapper(httpDnsThread);
+	}
+
 	private static class ExecutorServiceWrapper implements ExecutorService {
 		private final ThreadPoolExecutor mHttpDnsThread;
 

@@ -11,6 +11,7 @@ import com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector
 import okhttp3.ConnectionPool
 import okhttp3.Dns
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import java.lang.ref.WeakReference
 import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
@@ -63,11 +64,15 @@ import java.util.concurrent.TimeUnit
     }
 
     fun getOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor(OkHttpLog())
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+
         return OkHttpClient.Builder()
             .connectionPool(ConnectionPool(0, 10 * 1000, TimeUnit.MICROSECONDS))
             .hostnameVerifier { _, _ ->true }
             .dns(object : Dns {
                 override fun lookup(hostname: String): List<InetAddress> {
+                    Log.d(tag, "start lookup $hostname via $mResolveMethod")
                     val dnsService = HttpDnsServiceHolder.getHttpDnsService(mContext.get()!!)
                     //修改为最新的通俗易懂的api
                     var httpDnsResult: HTTPDNSResult? = null
@@ -118,6 +123,7 @@ import java.util.concurrent.TimeUnit
                     return inetAddresses
                 }
             })
+            .addNetworkInterceptor(loggingInterceptor)
             .build()
     }
 

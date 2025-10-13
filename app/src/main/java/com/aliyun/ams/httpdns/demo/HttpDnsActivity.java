@@ -32,20 +32,14 @@ public class HttpDnsActivity extends BaseActivity {
     public static final String SCHEMA_HTTPS = "https://";
     public static final String SCHEMA_HTTP = "http://";
 
-    public static final String APPLE_URL = "www.apple.com";
     public static final String TAOBAO_URL = "www.taobao.com";
-    public static final String ALICDN_URL = "gw.alicdn.com";
     public static final String ALIYUN_URL = "www.aliyun.com";
-    public static final String IPV6TEST = "ipv6.sjtu.edu.cn";
 
     public static final String[] hosts = new String[]{
-            APPLE_URL, TAOBAO_URL, ALICDN_URL, ALIYUN_URL, IPV6TEST
+            TAOBAO_URL, ALIYUN_URL
     };
 
     public static String getUrl(String schema, String host) {
-        if (host.equals(ALICDN_URL)) {
-            return schema + host + "/imgextra/i4/O1CN01QmAvnA1IgJvX1GfLm_!!6000000000922-2-tps-176-176.png";
-        }
         return schema + host;
     }
 
@@ -56,7 +50,7 @@ public class HttpDnsActivity extends BaseActivity {
     /**
      * 要请求的域名
      */
-    private String host = APPLE_URL;
+    private String host = ALIYUN_URL;
     /**
      * 要解析的ip类型
      */
@@ -133,22 +127,19 @@ public class HttpDnsActivity extends BaseActivity {
         });
 
         addTwoButton("开启降级", v -> {
-            MyApp.getInstance().getService().setDegradationFilter(hostName -> {
-                // 此处可以根据域名判断是否不使用httpdns， true 不使用， false 使用。
-                return true;
-            });
-            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "开启降级");
+            // 注意：降级过滤器现在需要通过InitConfig设置，重启应用生效
+            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "降级功能需要通过InitConfig配置");
         }, "关闭降级", v -> {
-            MyApp.getInstance().getService().setDegradationFilter(null);
-            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "关闭降级");
+            // 注意：降级过滤器现在需要通过InitConfig设置，重启应用生效
+            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "降级功能需要通过InitConfig配置");
         });
 
         addTwoButton("开启网络变化后预解析", v -> {
-            MyApp.getInstance().getService().setPreResolveAfterNetworkChanged(true);
-            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "开启网络变化后预解析");
+            // 注意：此功能现在需要通过InitConfig设置，重启应用生效
+            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "网络变化后预解析需要通过InitConfig配置");
         }, "关闭网络变化后预解析", v -> {
-            MyApp.getInstance().getService().setPreResolveAfterNetworkChanged(false);
-            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "关闭网络变化后预解析");
+            // 注意：此功能现在需要通过InitConfig设置，重启应用生效
+            sendLog(MyApp.getInstance().getCurrentHolder().getAccountId() + "网络变化后预解析需要通过InitConfig配置");
         });
 
         addView(R.layout.item_autocomplete_edittext_button, view -> {
@@ -350,30 +341,7 @@ public class HttpDnsActivity extends BaseActivity {
 
         final String[] validHosts = new String[]{
                 "www.aliyun.com",
-                "www.taobao.com",
-                "www.google.com",
-                "api.vpgame.com",
-                "yqh.aliyun.com",
-                "www.test1.com",
-                "ib.snssdk.com",
-                "www.baidu.com",
-                "www.dddzzz.com",
-                "isub.snssdk.com",
-                "www.facebook.com",
-                "m.vpgame.com",
-                "img.momocdn.com",
-                "ipv6.l.google.com",
-                "ipv6.sjtu.edu.cn",
-                "fdfs.xmcdn.com",
-                "testcenter.dacangjp.com",
-                "mobilegw.alipaydns.com",
-                "ww1.sinaimg.cn.w.alikunlun.com",
-                "x2ipv6.tcdn.qq.com",
-                "hiphotos.jomodns.com",
-                "suning.xdwscache.ourwebcdn.com",
-                "gw.alicdn.com",
-                "dou.bz",
-                "www.apple.com",
+                "www.taobao.com"
         };
 
         addTwoButton("并发异步请求", v -> {

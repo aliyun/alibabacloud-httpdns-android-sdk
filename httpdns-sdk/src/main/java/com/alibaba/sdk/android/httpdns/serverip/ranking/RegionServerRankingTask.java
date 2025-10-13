@@ -54,6 +54,7 @@ public class RegionServerRankingTask implements Runnable {
             socket.connect(remoteAddress, 5 * 1000);
             end = System.currentTimeMillis();
         } catch (IOException e) {
+
         }
         if (end == Long.MAX_VALUE) {
             return Integer.MAX_VALUE;

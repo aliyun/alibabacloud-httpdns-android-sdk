@@ -21,6 +21,9 @@ public class Constants {
 	public static final String REGION_DE = "de";
 	//美国
 	public static final String REGION_US = "us";
+	//预发
+	public static final String REGION_DEBUG_PRE = "pre";
+	//TIPS 增加region需要去RegionServerManager添加策略
 	// global
 	public static final String REGION_GLOBAL = "global";
 
@@ -71,4 +74,10 @@ public class Constants {
 	public static final String CONFIG_LAST_INDEX_IPV6 = "lastIpv6";
 	public static final String CONFIG_SERVERS_LAST_UPDATED_TIME = "servers_last_updated_time";
 	public static final String CONFIG_CURRENT_SERVER_REGION = "server_region";
+
+	public static final String CONFIG_OBSERVABLE_CONFIG = "observable_config";
+	public static final String CONFIG_OBSERVABLE_BENCH_MARKS = "observable_bench_marks";
+	public static final int UPDATE_REGION_SERVER_SCENES_INIT = 3;
+	public static final int UPDATE_REGION_SERVER_SCENES_REGION_CHANGE = 2;
+	public static final int UPDATE_REGION_SERVER_SCENES_SERVER_UNAVAILABLE = 1;
 }

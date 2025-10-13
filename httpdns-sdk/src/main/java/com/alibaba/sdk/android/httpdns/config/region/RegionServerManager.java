@@ -32,6 +32,12 @@ public class RegionServerManager {
                 }
                 regionServer = AmericaRegionServer.getInitServer();
                 break;
+            case Constants.REGION_DEBUG_PRE:
+                if (HttpDnsLog.isPrint()) {
+                    HttpDnsLog.d("use pre region");
+                }
+                regionServer = PreReleaseRegionServer.getInitServer();
+                break;
             default:
                 if (HttpDnsLog.isPrint()) {
                     HttpDnsLog.d("use default region");
@@ -57,6 +63,9 @@ public class RegionServerManager {
                 break;
             case Constants.REGION_US:
                 regionServer = AmericaRegionServer.getUpdateServer();
+                break;
+            case Constants.REGION_DEBUG_PRE:
+                regionServer = PreReleaseRegionServer.getUpdateServer();
                 break;
             default:
                 regionServer = DefaultRegionServer.getUpdateServer();

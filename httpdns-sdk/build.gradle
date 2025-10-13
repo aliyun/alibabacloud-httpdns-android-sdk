@@ -8,7 +8,7 @@ apply from: 'version.gradle'
 android {
     compileSdk 33
     defaultConfig {
-        minSdkVersion 9
+        minSdkVersion 19
         targetSdkVersion 33
         versionCode 1
         versionName httpdnsDebugVersion
@@ -92,9 +92,6 @@ dependencies {
     implementation "com.aliyun.ams:alicloud-android-logger:${loggerVersion}"
     implementation "com.aliyun.ams:alicloud-android-crashdefend:${crashDefendVersion}"
     implementation "com.aliyun.ams:alicloud-android-ipdetector:${ipdetectorVersion}"
-
-
-    normalImplementation "com.aliyun.ams:alicloud-android-utdid:${utdidVersion}"
 }
 
 ext.getIntlVersion = { version ->
@@ -125,7 +122,15 @@ afterEvaluate {
             if (project.android.defaultConfig.versionName.endsWith("-local-SNAPSHOT")) {
                 // only maven local
             } else if (project.android.defaultConfig.versionName.endsWith("-SNAPSHOT")) {
-                // upload to snapshot maven
+                maven {
+                    name "EMAS"
+                    url "http://nexus-ce.emas-poc.com/repository/maven-snapshots/"
+                    credentials {
+                        username = "emasdev"
+                        password = "emas1a2s3dqwe"
+                    }
+                    allowInsecureProtocol = true
+                }
             }
         }
     }

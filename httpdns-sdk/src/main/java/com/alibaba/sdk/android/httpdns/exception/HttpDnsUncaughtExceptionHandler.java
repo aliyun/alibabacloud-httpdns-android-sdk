@@ -1,7 +1,6 @@
 package com.alibaba.sdk.android.httpdns.exception;
 
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
-import com.alibaba.sdk.android.httpdns.report.ReportManager;
 
 public class HttpDnsUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 	// 处理所有未捕获异常
@@ -17,9 +16,6 @@ public class HttpDnsUncaughtExceptionHandler implements Thread.UncaughtException
 	}
 
 	private void reportUncaughtError(Throwable ex) {
-		ReportManager reportManager = ReportManager.getDefaultReportManager();
-		if (reportManager != null) {
-			reportManager.reportErrorUncaughtException(ex.getMessage());
-		}
+
 	}
 }

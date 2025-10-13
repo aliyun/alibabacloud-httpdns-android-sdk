@@ -29,6 +29,7 @@ class ListAdapter(private val context: Context,
         }
         holder.setItemValue(itemList[position]) {
             when (itemList[holder.adapterPosition].type) {
+                kListItemTag -> deleteListener.onTagDeleted(holder.adapterPosition)
                 kListItemTypeHostWithFixedIP -> deleteListener.onHostWithFixedIPDeleted(holder.adapterPosition)
                 kListItemTypeBlackList -> deleteListener.onHostBlackListDeleted(holder.adapterPosition)
                 kListItemTypeCacheTtl -> deleteListener.onTtlDeleted(itemList[holder.adapterPosition].content)
@@ -71,6 +72,11 @@ class ListAdapter(private val context: Context,
 
         fun setItemValue(listItem: ListItem, onDeleteListener: View.OnClickListener) {
             when (listItem.type) {
+                kListItemTag -> {
+                    binding.hostFixedIpContainer.visibility = View.VISIBLE
+                    binding.hostAndPortOrTtlContainer.visibility = View.GONE
+                    binding.preHostOrWithFixedIp.text = listItem.content
+                }
                 kListItemTypeIPRanking -> {
                     binding.hostFixedIpContainer.visibility = View.GONE
                     binding.hostAndPortOrTtlContainer.visibility = View.VISIBLE
@@ -127,6 +133,8 @@ class ListAdapter(private val context: Context,
     }
 
     interface OnDeleteListener {
+        fun onTagDeleted(position: Int)
+
         fun onHostWithFixedIPDeleted(position: Int)
 
         fun onIPRankingItemDeleted(position: Int)

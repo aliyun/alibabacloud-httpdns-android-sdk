@@ -1,5 +1,6 @@
 package com.alibaba.ams.emas.demo.ui.basic
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.alibaba.ams.emas.demo.constant.KEY_REGION
 import com.alibaba.ams.emas.demo.getAccountPreference
+import com.alibaba.ams.emas.demo.ui.info.list.ListActivity
+import com.alibaba.ams.emas.demo.ui.info.list.kListItemTag
 import com.aliyun.ams.httpdns.demo.R
 import com.aliyun.ams.httpdns.demo.databinding.FragmentBasicSettingBinding
 
@@ -41,7 +44,11 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
         viewModel.initData()
 
         binding.viewModel = viewModel
-
+        binding.jumpToAddTag.setOnClickListener {
+            val intent = Intent(activity, ListActivity::class.java)
+            intent.putExtra("list_type", kListItemTag)
+            startActivity(intent)
+        }
         return root
     }
 
@@ -59,7 +66,8 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
             val singapore = getString(R.string.singapore)
             val germany = getString(R.string.germany)
             val america = getString(R.string.america)
-            val items = arrayOf(china, chinaHK, singapore, germany, america)
+            val pre = getString(R.string.pre)
+            val items = arrayOf(china, chinaHK, singapore, germany, america, pre)
             var region = ""
             val preferences = activity?.let { getAccountPreference(it) }
             val index = when (preferences?.getString(KEY_REGION, "cn")) {
@@ -67,6 +75,7 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
                 "sg" -> 2
                 "de" -> 3
                 "us" -> 4
+                "pre" -> 5
                 else -> 0
             }
             setSingleChoiceItems(items, index) { _, which ->
@@ -75,6 +84,7 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
                     2 -> "sg"
                     3 -> "de"
                     4 -> "us"
+                    5 -> "pre"
                     else -> "cn"
                 }
             }
@@ -125,11 +135,7 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
             setTitle(getString(R.string.clear_host_cache))
             setView(input)
             setPositiveButton(R.string.confirm) { dialog, _ ->
-                when (val host = editText.text.toString()) {
-                    "" -> Toast.makeText(activity, R.string.pre_resolve_host_is_empty, Toast.LENGTH_SHORT)
-                        .show()
-                    else -> viewModel.clearDnsCache(host)
-                }
+                viewModel.clearDnsCache(editText.text.toString())
                 dialog.dismiss()
             }
             setNegativeButton(R.string.cancel) { dialog, _ ->
@@ -164,7 +170,9 @@ class BasicSettingFragment : Fragment(), IBasicShowDialog {
     }
 
     override fun onHttpDnsInit() {
-        _binding?.initHttpdns?.setText(R.string.inited_httpdns)
-        _binding?.initHttpdns?.isClickable = false
+        activity?.runOnUiThread(Runnable {
+            _binding?.initHttpdns?.setText(R.string.inited_httpdns)
+            _binding?.initHttpdns?.isClickable = false
+        })
     }
 }

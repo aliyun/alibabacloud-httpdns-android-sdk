@@ -27,7 +27,7 @@ public class RegionServerScheduleService {
 	 *
 	 * @param newRegion
 	 */
-	public void updateRegionServerIps(final String newRegion) {
+	public void updateRegionServerIps(final String newRegion, final int scenes) {
 		String[] serverIps = mServerIpRepo.getServerIps(newRegion);
 		int[] ports = mServerIpRepo.getPorts(newRegion);
 		String[] serverV6Ips = mServerIpRepo.getServerV6Ips(newRegion);
@@ -38,7 +38,7 @@ public class RegionServerScheduleService {
 		}
 
 		if (mLocker.begin(newRegion)) {
-			UpdateRegionServerTask.updateRegionServer(mHttpDnsConfig, newRegion,
+			UpdateRegionServerTask.updateRegionServer(mHttpDnsConfig, newRegion, scenes,
 				new RequestCallback<UpdateRegionServerResponse>() {
 					@Override
 					public void onSuccess(UpdateRegionServerResponse updateServerResponse) {
@@ -62,6 +62,12 @@ public class RegionServerScheduleService {
 								updateServerResponse.getServerIpv6s(),
 								updateServerResponse.getServerIpv6Ports());
 						}
+
+						boolean updated = mHttpDnsConfig.getObservableConfig().updateConfig(updateServerResponse.getObservableConfig());
+						if (updated) {
+							mHttpDnsConfig.saveToCache();
+						}
+
 						mLocker.end(newRegion);
 					}
 
@@ -89,8 +95,8 @@ public class RegionServerScheduleService {
 	/**
 	 * 更新服务ip
 	 */
-	public void updateRegionServerIps() {
-		updateRegionServerIps(this.mHttpDnsConfig.getRegion());
+	public void updateRegionServerIps(int scenes) {
+		updateRegionServerIps(this.mHttpDnsConfig.getRegion(), scenes);
 	}
 
 	/**

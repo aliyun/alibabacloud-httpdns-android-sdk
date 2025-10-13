@@ -11,11 +11,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.alibaba.sdk.android.httpdns.Region;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
 
 import android.content.Context;
 import android.text.Html;
+import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Pair;
 import org.json.JSONObject;
 
@@ -23,6 +26,22 @@ import org.json.JSONObject;
  * 辅助类
  */
 public class CommonUtil {
+
+	private static final int[] HEX_VALUES = new int[128];
+
+	static {
+		// 初始化查找表
+		Arrays.fill(HEX_VALUES, -1);
+		for (int i = '0'; i <= '9'; i++) {
+			HEX_VALUES[i] = i - '0';
+		}
+		for (int i = 'a'; i <= 'f'; i++) {
+			HEX_VALUES[i] = 10 + (i - 'a');
+		}
+		for (int i = 'A'; i <= 'F'; i++) {
+			HEX_VALUES[i] = 10 + (i - 'A');
+		}
+	}
 
 	public static boolean regionEquals(String region, String regionThat) {
 		if (region == null) {
@@ -42,7 +61,16 @@ public class CommonUtil {
 		if (region == null) {
 			return Constants.REGION_DEFAULT;
 		}
-		return region;
+
+		String result = Constants.REGION_DEFAULT;
+		for (Region oneRegion : Region.values()) {
+			if (TextUtils.equals(region, oneRegion.getRegion())) {
+				result = region;
+				break;
+			}
+		}
+
+		return result;
 	}
 
 	public static boolean isSameServer(String[] oldServerIps, int[] oldPorts,
@@ -296,4 +324,58 @@ public class CommonUtil {
 			}
 		}
 	}
+
+	public static String encodeHexString(byte[] bytes) {
+		char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
+		char[] hexChars = new char[bytes.length * 2];
+		for (int i = 0; i < bytes.length; i++) {
+			int v = bytes[i] & 0xFF;
+			hexChars[i * 2] = HEX_ARRAY[v >>> 4];
+			hexChars[i * 2 + 1] = HEX_ARRAY[v & 0x0F];
+		}
+		return new String(hexChars);
+	}
+
+	public static byte[] decodeHex(String hex) throws IllegalArgumentException {
+		if (hex == null || hex.isEmpty()) {
+			return new byte[0];
+		}
+
+		// 移除所有空格
+		hex = hex.replaceAll("\\s", "");
+
+		if (hex.length() % 2 != 0) {
+			hex = "0" + hex;
+		}
+
+		int len = hex.length();
+		byte[] bytes = new byte[len / 2];
+
+		for (int i = 0; i < len; i += 2) {
+			char high = hex.charAt(i);
+			char low = hex.charAt(i + 1);
+
+			// 验证字符是否有效
+			if (high >= HEX_VALUES.length || low >= HEX_VALUES.length
+					|| HEX_VALUES[high] == -1 || HEX_VALUES[low] == -1) {
+				throw new IllegalArgumentException("Invalid hex string");
+			}
+
+			bytes[i / 2] = (byte) ((HEX_VALUES[high] << 4) + HEX_VALUES[low]);
+		}
+
+		return bytes;
+	}
+
+	public static byte[] decodeBase64(String base64) {
+		if (base64 == null || base64.isEmpty()) {
+			return new byte[0];
+		}
+		try {
+			return Base64.decode(base64, Base64.DEFAULT);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid base64 string", e);
+		}
+	}
+
 }
