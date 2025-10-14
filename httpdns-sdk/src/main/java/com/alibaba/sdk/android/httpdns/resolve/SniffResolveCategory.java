@@ -1,13 +1,12 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
-import com.alibaba.sdk.android.httpdns.report.ReportManager;
 import com.alibaba.sdk.android.httpdns.request.HttpRequest;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
-import com.alibaba.sdk.android.httpdns.request.HttpRequestFailWatcher;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestTask;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestWatcher;
 import com.alibaba.sdk.android.httpdns.request.RequestCallback;
+import com.alibaba.sdk.android.httpdns.request.SingleResolveHttpRequestStatusWatcher;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
@@ -15,15 +14,16 @@ import com.alibaba.sdk.android.httpdns.utils.Constants;
  * 嗅探模式
  */
 public class SniffResolveCategory implements ResolveHostCategory {
-
+	private final HttpDnsConfig mHttpDnsConfig;
 	private final RegionServerScheduleService mScheduleService;
 	private final StatusControl mStatusControl;
 	private int mTimeInterval = 30 * 1000;
 	private long mLastRequestTime = 0L;
 
-	public SniffResolveCategory(RegionServerScheduleService scheduleService, StatusControl statusControl) {
+	public SniffResolveCategory(HttpDnsConfig config, RegionServerScheduleService scheduleService, StatusControl statusControl) {
 		this.mScheduleService = scheduleService;
 		this.mStatusControl = statusControl;
+		mHttpDnsConfig = config;
 	}
 
 	@Override
@@ -38,9 +38,9 @@ public class SniffResolveCategory implements ResolveHostCategory {
 		mLastRequestTime = currentTimeMillis;
 
 		HttpRequest<ResolveHostResponse> request = new HttpRequest<>(
-            requestConfig, new ResolveInterpretHostResponseParser());
-		request = new HttpRequestWatcher<>(request, new HttpRequestFailWatcher(
-			ReportManager.getReportManagerByAccount(config.getAccountId())));
+            requestConfig, new ResolveHostResponseParser(requestConfig.getAESEncryptService()));
+		request = new HttpRequestWatcher<>(request, new SingleResolveHttpRequestStatusWatcher(
+			mHttpDnsConfig.getObservableManager()));
 		// 切换服务IP，更新服务IP
 		request = new HttpRequestWatcher<>(request, new ShiftServerWatcher(config,
             mScheduleService,

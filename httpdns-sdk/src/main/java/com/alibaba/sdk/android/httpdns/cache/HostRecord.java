@@ -20,9 +20,11 @@ public class HostRecord {
 	private String extra;
 	private String cacheKey;
 	private boolean fromDB = false;
+	private String serverIp;
+	private String noIpCode;
 
 	public static HostRecord create(String region, String host, RequestIpType type, String extra,
-									String cacheKey, String[] ips, int ttl) {
+									String cacheKey, String[] ips, int ttl, String serverIp, String noIpCode) {
 		HostRecord record = new HostRecord();
 		record.region = region;
 		record.host = host;
@@ -32,6 +34,8 @@ public class HostRecord {
 		record.queryTime = System.currentTimeMillis();
 		record.extra = extra;
 		record.cacheKey = cacheKey;
+		record.serverIp = serverIp;
+		record.noIpCode = noIpCode;
 		return record;
 	}
 
@@ -119,6 +123,22 @@ public class HostRecord {
 		this.id = id;
 	}
 
+	public void setServerIp(String ip) {
+		serverIp = ip;
+	}
+
+	public String getServerIp() {
+		return serverIp;
+	}
+
+	public void setNoIpCode(String noIpCode) {
+		this.noIpCode = noIpCode;
+	}
+
+	public String getNoIpCode() {
+		return noIpCode;
+	}
+
 	@Override
 	public boolean equals(Object o) {
         if (this == o) {return true;}
@@ -132,13 +152,14 @@ public class HostRecord {
 			host.equals(that.host) &&
 			Arrays.equals(ips, that.ips) &&
 			CommonUtil.equals(extra, that.extra) &&
-			CommonUtil.equals(cacheKey, that.cacheKey);
+			CommonUtil.equals(cacheKey, that.cacheKey) &&
+			CommonUtil.equals(noIpCode, that.noIpCode);
 	}
 
 	@Override
 	public int hashCode() {
 		int result = Arrays.hashCode(
-			new Object[] {id, region, host, type, ttl, queryTime, extra, cacheKey});
+			new Object[] {id, region, host, type, ttl, queryTime, extra, cacheKey, noIpCode});
 		result = 31 * result + Arrays.hashCode(ips);
 		return result;
 	}
@@ -156,6 +177,7 @@ public class HostRecord {
 			", extra='" + extra + '\'' +
 			", cacheKey='" + cacheKey + '\'' +
 			", fromDB=" + fromDB +
+			", noIpCode=" + noIpCode +
 			'}';
 	}
 }

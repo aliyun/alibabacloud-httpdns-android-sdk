@@ -1,5 +1,6 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
+import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
 
 /**
@@ -11,9 +12,9 @@ public class CategoryController implements StatusControl {
 	private final NormalResolveCategory mNormal;
 	private final SniffResolveCategory mSniff;
 
-	public CategoryController(RegionServerScheduleService scheduleService) {
-		mNormal = new NormalResolveCategory(scheduleService, this);
-		mSniff = new SniffResolveCategory(scheduleService, this);
+	public CategoryController(HttpDnsConfig config, RegionServerScheduleService scheduleService) {
+		mNormal = new NormalResolveCategory(config, scheduleService, this);
+		mSniff = new SniffResolveCategory(config, scheduleService, this);
 	}
 
 	public ResolveHostCategory getCategory() {

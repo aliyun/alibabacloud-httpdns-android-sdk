@@ -8,10 +8,10 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import com.alibaba.ams.emas.demo.*
 import com.alibaba.ams.emas.demo.constant.*
+import com.alibaba.sdk.android.httpdns.HttpDns
 import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.alibaba.sdk.android.httpdns.InitConfig
 import com.alibaba.sdk.android.httpdns.NotUseHttpDnsFilter
-import com.alibaba.sdk.android.httpdns.Region
 import com.alibaba.sdk.android.httpdns.RequestIpType
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog
 import com.aliyun.ams.httpdns.demo.BuildConfig
@@ -26,9 +26,25 @@ import org.json.JSONObject
 
 class BasicSettingViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val DAY_MILLS = 24 * 60 * 60 * 1000
+    }
+
     private val preferences = getAccountPreference(getApplication())
 
     private var dnsService: HttpDnsService? = null
+
+    var secretKeySetByConfig = true
+
+    /**
+     * 是否开启鉴权模式
+     */
+    var enableAuthMode = true
+
+    /**
+     * 是否开启加密模式
+     */
+    var enableEncryptMode = true
 
     /**
      * 是否允许过期IP
@@ -74,11 +90,19 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         value = "2000ms"
     }
 
+    var cacheExpireTime = SingleLiveData<String>().apply {
+        value = "0"
+    }
+
     var showDialog: IBasicShowDialog? = null
 
     fun initData() {
+        secretKeySetByConfig = preferences.getBoolean(KEY_SECRET_KEY_SET_BY_CONFIG, true)
+        enableAuthMode = preferences.getBoolean(KEY_ENABLE_AUTH_MODE, true)
+        enableEncryptMode = preferences.getBoolean(KEY_ENABLE_ENCRYPT_MODE, true)
         enableExpiredIP = preferences.getBoolean(KEY_ENABLE_EXPIRED_IP, false)
         enableCacheIP = preferences.getBoolean(KEY_ENABLE_CACHE_IP, false)
+        cacheExpireTime.value = preferences.getString(KEY_CACHE_EXPIRE_TIME, "0")
         enableHttps = preferences.getBoolean(KEY_ENABLE_HTTPS, false)
         enableDegrade = preferences.getBoolean(KEY_ENABLE_DEGRADE, false)
         enableAutoRefresh = preferences.getBoolean(KEY_ENABLE_AUTO_REFRESH, false)
@@ -89,6 +113,7 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
             "sg" -> currentRegion.value = getString(R.string.singapore)
             "de" -> currentRegion.value = getString(R.string.germany)
             "us" -> currentRegion.value = getString(R.string.america)
+            "pre" -> currentRegion.value = getString(R.string.pre)
         }
         currentTimeout.value = "${preferences.getInt(KEY_TIMEOUT, 2000)}ms"
 
@@ -98,6 +123,26 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    fun toggleSecretKeySet(button: CompoundButton, checked: Boolean) {
+        secretKeySetByConfig = checked
+        val editor = preferences.edit()
+        editor.putBoolean(KEY_SECRET_KEY_SET_BY_CONFIG, checked)
+        editor.apply()
+    }
+
+    fun toggleAuthMode(button: CompoundButton, checked: Boolean) {
+        enableAuthMode = checked
+        val editor = preferences.edit()
+        editor.putBoolean(KEY_ENABLE_AUTH_MODE, checked)
+        editor.apply()
+    }
+
+    fun toggleEncryptMode(button: CompoundButton, checked: Boolean) {
+        enableEncryptMode = checked
+        val editor = preferences.edit()
+        editor.putBoolean(KEY_ENABLE_ENCRYPT_MODE, checked)
+        editor.apply()
+    }
 
     fun toggleEnableExpiredIp(button: CompoundButton, checked: Boolean) {
         enableExpiredIP = checked
@@ -153,19 +198,13 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
             "hk" -> getString(R.string.china_hk)
             "sg" -> getString(R.string.singapore)
             "de" -> getString(R.string.germany)
+            "pre" -> getString(R.string.pre)
             else -> getString(R.string.china)
         }
         val editor = preferences.edit()
         editor.putString(KEY_REGION, region)
         editor.apply()
-        dnsService?.setRegion(when (region) {
-            "cn" -> Region.DEFAULT
-            "hk" -> Region.HK
-            "sg" -> Region.SG
-            "de" -> Region.DE
-            "us" -> Region.US
-            else -> Region.DEFAULT
-        })
+        dnsService?.setRegion(region)
     }
 
     fun setTimeout() {
@@ -184,22 +223,18 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun clearDnsCache(host: String) {
-        dnsService?.cleanHostCache(mutableListOf(host) as ArrayList<String>)
+        if (TextUtils.isEmpty(host)) {
+            dnsService?.cleanHostCache(null)
+        } else {
+            dnsService?.cleanHostCache(mutableListOf(host) as ArrayList<String>)
+        }
     }
 
     fun batchResolveHosts() {
-        for (host in BatchResolveCacheHolder.batchResolveV4List) {
-            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.v4)
-        }
-        for (host in BatchResolveCacheHolder.batchResolveV6List) {
-            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.v6)
-        }
-        for (host in BatchResolveCacheHolder.batchResolveAutoList) {
-            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.auto)
-        }
-        for (host in BatchResolveCacheHolder.batchResolveBothList) {
-            dnsService?.getHttpDnsResultForHostSyncNonBlocking(host, RequestIpType.both)
-        }
+        dnsService?.setPreResolveHosts(BatchResolveCacheHolder.batchResolveV4List, RequestIpType.v4)
+        dnsService?.setPreResolveHosts(BatchResolveCacheHolder.batchResolveV6List, RequestIpType.v6)
+        dnsService?.setPreResolveHosts(BatchResolveCacheHolder.batchResolveAutoList, RequestIpType.auto)
+        dnsService?.setPreResolveHosts(BatchResolveCacheHolder.batchResolveBothList, RequestIpType.both)
     }
 
     fun showAddPreResolveDialog() {
@@ -210,6 +245,8 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
         if (!TextUtils.isEmpty(BuildConfig.ACCOUNT_ID)) {
             CoroutineScope(Dispatchers.Default).launch {
                 withContext(Dispatchers.IO) {
+                    val aesSecretKey = if (enableEncryptMode && !TextUtils.isEmpty(BuildConfig.AES_SECRET_KEY)) BuildConfig.AES_SECRET_KEY else ""
+                    val secretKey = if (enableAuthMode && !TextUtils.isEmpty(BuildConfig.SECRET_KEY)) BuildConfig.SECRET_KEY else ""
                     val enableExpiredIp = preferences.getBoolean(KEY_ENABLE_EXPIRED_IP, false)
                     val enableCacheIp = preferences.getBoolean(KEY_ENABLE_CACHE_IP, false)
                     val enableHttpDns = preferences.getBoolean(KEY_ENABLE_HTTPS, false)
@@ -224,6 +261,7 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
                     //主站域名
                     val hostListWithFixedIpJson =
                         preferences.getString(KEY_HOST_WITH_FIXED_IP, null)
+                    val tagsJson = preferences.getString(KEY_TAGS, null)
                     //预解析
                     val preResolveHostList  = preferences.getString(KEY_PRE_RESOLVE_HOST_LIST, null)
                     preResolveHostList?.let { Log.d("httpdns:HttpDnsApplication", "pre resolve list: $it") }
@@ -249,33 +287,14 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
                         }
                     }
 
-                    var lastRegion: Region = Region.DEFAULT
-                    region?.let {
-                        lastRegion = when (it) {
-                            "hk" -> {
-                                Region.HK
-                            }
-                            "sg" -> {
-                                Region.SG
-                            }
-                            "de" -> {
-                                Region.DE
-                            }
-                            "us" -> {
-                                Region.US
-                            }
-                            else -> {
-                                Region.DEFAULT
-                            }
-                        }
-                    }
+                    val cacheExpireTimeTemp = cacheExpireTime.value?.toLong() ?: 0
 
                     HttpDnsLog.enable(preferences.getBoolean(KEY_ENABLE_LOG, false))
-                    InitConfig.Builder()
+                    val builder = InitConfig.Builder()
                         .setEnableHttps(enableHttpDns)
-                        .setEnableCacheIp(enableCacheIp)
+                        .setEnableCacheIp(enableCacheIp, cacheExpireTimeTemp * DAY_MILLS)
                         .setEnableExpiredIp(enableExpiredIp)
-                        .setRegion(lastRegion)
+                        .setRegion(region)
                         .setTimeoutMillis(timeout)
                         .setEnableDegradationLocalDns(enableDegradationLocalDns)
                         .setIPRankingList(ipRankingItemJson.toIPRankingList())
@@ -289,8 +308,14 @@ class BasicSettingViewModel(application: Application) : AndroidViewModel(applica
                             return@NotUseHttpDnsFilter false
                         })
                         .setSdnsGlobalParams(sdnsGlobalParams)
-                        .buildFor(BuildConfig.ACCOUNT_ID)
+                        .setBizTags(tagsJson.toTagList())
+                        .setAesSecretKey(aesSecretKey)
 
+                    if (secretKeySetByConfig) {
+                        builder.setContext(this@BasicSettingViewModel.getApplication<HttpDnsApplication>())
+                        builder.setSecretKey(secretKey)
+                    }
+                    HttpDns.init(BuildConfig.ACCOUNT_ID, builder.build())
                     dnsService = HttpDnsServiceHolder.getHttpDnsService(getApplication())
                     dnsService?.setPreResolveHosts(PreResolveCacheHolder.preResolveV4List)
                     dnsService?.setPreResolveHosts(PreResolveCacheHolder.preResolveV6List, RequestIpType.v6)

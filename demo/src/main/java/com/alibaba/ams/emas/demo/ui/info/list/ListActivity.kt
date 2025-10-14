@@ -41,6 +41,7 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
                 kListItemPreResolve -> getString(R.string.pre_resolve_list)
                 kListItemTypeBlackList -> getString(R.string.host_black_list)
                 kListItemBatchResolve -> getString(R.string.batch_resolve_list)
+                kListItemTag -> getString(R.string.add_tag)
                 else -> getString(R.string.ip_probe_list)
             }
         }
@@ -68,6 +69,32 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
 
     private fun showAddDialog() {
         when (listType) {
+            kListItemTag -> {
+                val input = LayoutInflater.from(this).inflate(R.layout.dialog_input, null)
+                val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
+                editText.hint = getString(R.string.add_tag_hint)
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle(getString(R.string.add_tag))
+                    .setView(input)
+                    .setPositiveButton(R.string.confirm) { dialog, _ ->
+                        when (val host = editText.text.toString()) {
+                            "" -> Toast.makeText(
+                                this@ListActivity,
+                                R.string.host_fixed_ip_empty,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            else -> {
+                                viewModel.toAddTag(host, listAdapter)
+                            }
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
             kListItemTypeHostWithFixedIP -> {
                 val input = LayoutInflater.from(this).inflate(R.layout.dialog_input, null)
                 val editText = input.findViewById<AppCompatEditText>(R.id.add_input)
@@ -291,6 +318,10 @@ class ListActivity : AppCompatActivity(), ListAdapter.OnDeleteListener {
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onTagDeleted(position: Int) {
+        viewModel.onTagDeleted(position)
     }
 
     override fun onHostWithFixedIPDeleted(position: Int) {

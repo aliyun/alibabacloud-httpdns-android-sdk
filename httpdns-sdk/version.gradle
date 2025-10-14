@@ -1,8 +1,8 @@
 ext {
-    httpdnsDebugVersion = '2.4.3'
+    httpdnsDebugVersion = '2.6.7'
 
     loggerVersion = '1.2.0'
     crashDefendVersion = '0.0.6'
     utdidVersion = '2.6.0'
-    ipdetectorVersion = '1.1.0'
+    ipdetectorVersion = '1.2.0'
 }

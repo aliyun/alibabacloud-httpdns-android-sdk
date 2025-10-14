@@ -16,3 +16,5 @@ const val kListItemPreResolve = 0x04
 const val kListItemTypeBlackList = 0x05
 
 const val kListItemBatchResolve = 0x06
+
+const val kListItemTag = 0x07

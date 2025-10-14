@@ -20,6 +20,8 @@ public class RetryHttpRequest<T> extends HttpRequestWrapper<T> {
 			} catch (Throwable throwable) {
 				if (shouldRetry(throwable)) {
 					if (retryCount > 0) {
+						//可观测需要
+						getRequestConfig().setRetry();
 						retryCount--;
 					} else {
 						throw throwable;

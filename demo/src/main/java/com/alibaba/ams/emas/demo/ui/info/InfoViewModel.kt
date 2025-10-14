@@ -1,11 +1,10 @@
 package com.alibaba.ams.emas.demo.ui.info
 
 import android.app.Application
-import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import com.alibaba.ams.emas.demo.HttpDnsApplication
+import com.alibaba.ams.emas.demo.HttpDnsServiceHolder
 import com.alibaba.ams.emas.demo.SingleLiveData
 import com.alibaba.ams.emas.demo.getAccountPreference
 import com.alibaba.sdk.android.httpdns.NetType
@@ -42,6 +41,15 @@ class InfoViewModel(application: Application) : AndroidViewModel(application) {
 
         accountId.value = BuildConfig.ACCOUNT_ID
         secretKey.value = BuildConfig.SECRET_KEY
+    }
+
+    fun clearDnsCache() {
+        val httpdnsService = HttpDnsServiceHolder.getHttpDnsService(getApplication())
+        var i = 0;
+        while (i < 500) {
+            httpdnsService?.cleanHostCache(null)
+            ++i
+        }
     }
 
     fun clearAllCache() {

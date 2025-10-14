@@ -3,6 +3,7 @@ package com.alibaba.sdk.android.httpdns.impl;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 
+import com.alibaba.sdk.android.httpdns.BuildConfig;
 import com.alibaba.sdk.android.httpdns.HttpDnsSettings;
 import com.alibaba.sdk.android.httpdns.InitConfig;
 import com.alibaba.sdk.android.httpdns.config.ConfigCacheHelper;
@@ -10,6 +11,9 @@ import com.alibaba.sdk.android.httpdns.config.RegionServer;
 import com.alibaba.sdk.android.httpdns.config.ServerConfig;
 import com.alibaba.sdk.android.httpdns.config.region.RegionServerManager;
 import com.alibaba.sdk.android.httpdns.config.SpCacheItem;
+import com.alibaba.sdk.android.httpdns.observable.ObservableConfig;
+import com.alibaba.sdk.android.httpdns.observable.ObservableConstants;
+import com.alibaba.sdk.android.httpdns.observable.ObservableManager;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
 import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
@@ -17,6 +21,8 @@ import com.alibaba.sdk.android.httpdns.utils.ThreadUtil;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 
 /**
  * httpdns的配置
@@ -83,10 +89,18 @@ public class HttpDnsConfig implements SpCacheItem {
 	protected ExecutorService mWorker = ThreadUtil.createExecutorService();
 	protected ExecutorService mResolveWorker = ThreadUtil.createResolveExecutorService();
 	protected ExecutorService mDbWorker = ThreadUtil.createDBExecutorService();
+	private ObservableConfig mObservableConfig;
+	private ObservableManager mObservableManager;
+	private float mObservableSampleBenchMarks;
+	private String mBizTags;
+	private String mUA;
 
-	public HttpDnsConfig(Context context, String accountId) {
+	public HttpDnsConfig(Context context, String accountId, String secret) {
 		mContext = context;
 		mAccountId = accountId;
+		if (mContext != null) {
+			mUA = buildUA();
+		}
 
 		//region提前设置
 		mRegion = getInitRegion(accountId);
@@ -94,10 +108,15 @@ public class HttpDnsConfig implements SpCacheItem {
 		mDefaultUpdateServer = RegionServerManager.getUpdateServer(mRegion);
 
 		mCurrentServer = new ServerConfig(this, mInitServer.getServerIps(), mInitServer.getPorts(), mInitServer.getIpv6ServerIps(), mInitServer.getIpv6Ports());
+		mObservableConfig = new ObservableConfig();
 		// 先从缓存读取数据，再赋值cacheHelper， 避免在读取缓存过程中，触发写缓存操作
 		ConfigCacheHelper helper = new ConfigCacheHelper();
-		helper.restoreFromCache(context, this);
+		if (context != null) {
+			helper.restoreFromCache(context, this);
+		}
 		mCacheHelper = helper;
+
+		mObservableManager = new ObservableManager(this, secret);
 	}
 
 	public Context getContext() {
@@ -110,6 +129,25 @@ public class HttpDnsConfig implements SpCacheItem {
 
 	public ServerConfig getCurrentServer() {
 		return mCurrentServer;
+	}
+
+	public ObservableConfig getObservableConfig() {
+		return mObservableConfig;
+	}
+
+	public ObservableManager getObservableManager() {
+		return mObservableManager;
+	}
+
+	public float getObservableSampleBenchMarks() {
+		return mObservableSampleBenchMarks;
+	}
+
+	public void setObservableSampleBenchMarks(float benchMarks) {
+		if (mObservableSampleBenchMarks != benchMarks) {
+			mObservableSampleBenchMarks = benchMarks;
+			saveToCache();
+		}
 	}
 
 	public boolean isCurrentRegionMatch() {
@@ -149,6 +187,14 @@ public class HttpDnsConfig implements SpCacheItem {
 			this.mTimeout = timeout;
 			saveToCache();
 		}
+	}
+
+	public String getBizTags() {
+		return mBizTags;
+	}
+
+	public void setBizTags(String tags) {
+		mBizTags = tags;
 	}
 
 	public String getSchema() {
@@ -231,6 +277,10 @@ public class HttpDnsConfig implements SpCacheItem {
 
 	public String[] getDefaultIpv6UpdateServer() {
 		return mDefaultUpdateServer.getIpv6ServerIps();
+	}
+
+	public String getUA() {
+		return mUA;
 	}
 
 	@Override
@@ -332,23 +382,25 @@ public class HttpDnsConfig implements SpCacheItem {
 	// 缓存相关的 处理，暂时放这里
 
 	public void saveToCache() {
-		if (mCacheHelper != null) {
+		if (mCacheHelper != null && mContext != null) {
 			mCacheHelper.saveConfigToCache(mContext, this);
 		}
 	}
 
 	public SpCacheItem[] getCacheItem() {
-		return new SpCacheItem[] {this, mCurrentServer};
+		return new SpCacheItem[] {this, mCurrentServer, mObservableConfig};
 	}
 
 	@Override
 	public void restoreFromCache(SharedPreferences sp) {
 		mEnabled = sp.getBoolean(Constants.CONFIG_ENABLE, Constants.DEFAULT_SDK_ENABLE);
+		mObservableSampleBenchMarks = sp.getFloat(Constants.CONFIG_OBSERVABLE_BENCH_MARKS, -1);
 	}
 
 	@Override
 	public void saveToCache(SharedPreferences.Editor editor) {
 		editor.putBoolean(Constants.CONFIG_ENABLE, mEnabled);
+		editor.putFloat(Constants.CONFIG_OBSERVABLE_BENCH_MARKS, mObservableSampleBenchMarks);
 	}
 
 	private String getInitRegion(String accountId) {
@@ -357,19 +409,23 @@ public class HttpDnsConfig implements SpCacheItem {
 			return Constants.REGION_DEFAULT;
 		}
 
-		String region = config.getRegion();
-		if (region == null) {
-			return Constants.REGION_DEFAULT;
+		return CommonUtil.fixRegion(config.getRegion());
+	}
+
+	private String buildUA() {
+		if (mContext == null) {
+			return "";
+		}
+		String versionName = ObservableConstants.UNKNOWN;
+		try {
+			versionName = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0).versionName;
+		} catch (PackageManager.NameNotFoundException e) {
+
 		}
 
-		switch (region) {
-			case Constants.REGION_HK:
-			case Constants.REGION_SG:
-			case Constants.REGION_DE:
-			case Constants.REGION_US:
-				return region;
-			default:
-				return Constants.REGION_DEFAULT;
-		}
+		return Build.BRAND + "/" + Build.MODEL
+				+ ";" + "Android" + "/" + Build.VERSION.RELEASE
+				+ ";" + mContext.getPackageName() + "/" + versionName
+				+ ";" + "HTTPDNS" + "/" + BuildConfig.VERSION_NAME;
 	}
 }

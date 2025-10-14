@@ -42,7 +42,6 @@
 -keep class com.alibaba.sdk.android.httpdns.ApiForTest{*;}
 -keep class com.alibaba.sdk.android.httpdns.test.** {*;}
 -keep class com.alibaba.sdk.android.httpdns.resolve.ResolveHostResponse{*;}
--keep class com.alibaba.sdk.android.httpdns.resolve.BatchResolveHostResponse{*;}
 
 
 -keep class com.alibaba.sdk.android.httpdns.utils.CommonUtil{

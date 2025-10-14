@@ -40,6 +40,7 @@ public class HTTPDNSResult {
         this.queryTime = System.currentTimeMillis();
         this.ttl = 60;
         this.fromDB = isFromDB;
+        fromLocalDns = false;
     }
 
     public HTTPDNSResult (String host, String[] ips, String[] ipv6s, String extra, boolean expired, boolean isFromDB, boolean isFromLocalDns) {
@@ -129,6 +130,10 @@ public class HTTPDNSResult {
 
     public String getExtras() {
         return extra;
+    }
+
+    public int getTtl() {
+        return ttl;
     }
 
     public boolean isExpired() {

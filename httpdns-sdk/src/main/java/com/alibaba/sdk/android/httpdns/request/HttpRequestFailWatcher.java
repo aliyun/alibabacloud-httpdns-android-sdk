@@ -1,14 +1,11 @@
 package com.alibaba.sdk.android.httpdns.request;
 
-import com.alibaba.sdk.android.httpdns.report.ReportManager;
-import com.alibaba.sdk.android.httpdns.report.ReportUtils;
+import com.alibaba.sdk.android.httpdns.observable.ObservableManager;
 
 public class HttpRequestFailWatcher implements HttpRequestWatcher.Watcher {
 
-	ReportManager reportManager;
+	public HttpRequestFailWatcher(ObservableManager reportManager) {
 
-	public HttpRequestFailWatcher(ReportManager reportManager) {
-		this.reportManager = reportManager;
 	}
 
 	@Override
@@ -23,17 +20,6 @@ public class HttpRequestFailWatcher implements HttpRequestWatcher.Watcher {
 
 	@Override
 	public void onFail(HttpRequestConfig config, Throwable throwable) {
-		if (reportManager != null) {
-			if (config.url().contains("/ss")) {
-				reportManager.reportErrorSCRequest(config.getIp(),
-					ReportUtils.getErrorCode(throwable) + "", ReportUtils.getErrorMsg(throwable),
-					0);
-			} else {
-				reportManager.reportErrorHttpDnsRequest(config.getIp(),
-					ReportUtils.getErrorCode(throwable) + "", ReportUtils.getErrorMsg(throwable)
-                    , 0,
-					0);
-			}
-		}
+
 	}
 }

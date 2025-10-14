@@ -20,10 +20,14 @@ public abstract class AsyncRequestTask<T> implements Runnable {
     public void run() {
         try {
             T t = request();
-            mCallback.onSuccess(t);
+            if (mCallback != null) {
+                mCallback.onSuccess(t);
+            }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            mCallback.onFail(throwable);
+            if (mCallback != null) {
+                mCallback.onFail(throwable);
+            }
         }
     }
 }

@@ -15,7 +15,8 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.info.InfoFragment">
+        tools:context=".ui.info.InfoFragment"
+        android:layout_marginBottom="60dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -43,6 +44,36 @@
                     android:paddingBottom="10dp">
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/secret_key_config"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.secretKeySetByConfig}"
+                        android:onCheckedChanged="@{viewModel::toggleSecretKeySet}"
+                        android:text="@string/secret_key_location"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_auth_mode"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableAuthMode}"
+                        android:onCheckedChanged="@{viewModel::toggleAuthMode}"
+                        android:text="@string/enable_auth_mode"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enable_encrypt_mode"
+                        style="@style/Widget.HttpDnsDemo.Settings.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="@{viewModel.enableEncryptMode}"
+                        android:onCheckedChanged="@{viewModel::toggleEncryptMode}"
+                        android:text="@string/enable_encrypt_mode"
+                        android:textSize="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/enable_expired_ip"
                         style="@style/Widget.HttpDnsDemo.Settings.Switch"
                         android:layout_width="match_parent"
@@ -61,6 +92,28 @@
                         android:onCheckedChanged="@{viewModel::toggleEnableCacheIp}"
                         android:text="@string/enable_local_cache"
                         android:textSize="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/cache_expire_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@android:color/transparent"
+                        android:backgroundTint="@color/white"
+                        android:hint="@string/cache_expire_time"
+                        app:boxBackgroundColor="@android:color/transparent"
+                        app:helperText="@string/cache_expire_time_unit"
+                        app:errorEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@={viewModel.cacheExpireTime}"
+                            android:paddingStart="2dp"
+                            android:paddingEnd="2dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/enable_https"
@@ -190,6 +243,16 @@
                         android:textColor="@color/black"
                         android:background="?selectableItemBackground"
                         android:visibility="gone"
+                        android:textSize="16dp" />
+
+                    <TextView android:id="@+id/jump_to_add_tag"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_arrow_right"
+                        android:padding="18dp"
+                        android:text="@string/add_tag"
+                        android:textColor="@color/black"
+                        android:background="?selectableItemBackground"
                         android:textSize="16dp" />
 
                     <Button android:id="@+id/init_httpdns"

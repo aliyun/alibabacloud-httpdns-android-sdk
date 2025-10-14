@@ -1,5 +1,6 @@
 package com.alibaba.sdk.android.httpdns.serverip.ranking;
 
+import com.alibaba.sdk.android.httpdns.NetType;
 import com.alibaba.sdk.android.httpdns.config.RegionServer;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
@@ -22,26 +23,36 @@ public class RegionServerRankingService {
                         + ", ports: " + Arrays.toString(regionServer.getPorts()));
             }
 
-            mHttpDnsConfig.getWorker().execute(new RegionServerRankingTask(mHttpDnsConfig.getSchema(), regionServer.getServerIps(), regionServer.getPorts(), new RegionServerRankingCallback() {
-                @Override
-                public void onResult(String[] sortedIps, int[] ports) {
-                    mHttpDnsConfig.getCurrentServer().updateServerIpv4sRank(sortedIps, ports);
-                }
-            }));
+            try {
+                mHttpDnsConfig.getWorker().execute(new RegionServerRankingTask(mHttpDnsConfig.getSchema(), regionServer.getServerIps(), regionServer.getPorts(), new RegionServerRankingCallback() {
+                    @Override
+                    public void onResult(String[] sortedIps, int[] ports) {
+                        mHttpDnsConfig.getCurrentServer().updateServerIpv4sRank(sortedIps, ports);
+                    }
+                }));
+            } catch (Exception e) {
+
+            }
         }
 
-        //对v6地址进行测速
-        if (regionServer.getIpv6ServerIps() != null && regionServer.getIpv6ServerIps().length > 1) {
+        //对v6地址进行测速，检测到仅支持IPv6才测速，这里和使用服务IP的策略一样
+        if (regionServer.getIpv6ServerIps() != null && regionServer.getIpv6ServerIps().length > 1
+                && (mHttpDnsConfig.getNetworkDetector().getNetType(mHttpDnsConfig.getContext()) == NetType.v6)) {
             if (HttpDnsLog.isPrint()) {
                 HttpDnsLog.d("start ranking server ipv6s: " + Arrays.toString(regionServer.getIpv6ServerIps())
                         + ", ports: " + Arrays.toString(regionServer.getIpv6Ports()));
             }
-            mHttpDnsConfig.getWorker().execute(new RegionServerRankingTask(mHttpDnsConfig.getSchema(), regionServer.getIpv6ServerIps(), regionServer.getIpv6Ports(), new RegionServerRankingCallback() {
-                @Override
-                public void onResult(String[] sortedIps, int[] ports) {
-                    mHttpDnsConfig.getCurrentServer().updateServerIpv6sRank(sortedIps, ports);
-                }
-            }));
+
+            try {
+                mHttpDnsConfig.getWorker().execute(new RegionServerRankingTask(mHttpDnsConfig.getSchema(), regionServer.getIpv6ServerIps(), regionServer.getIpv6Ports(), new RegionServerRankingCallback() {
+                    @Override
+                    public void onResult(String[] sortedIps, int[] ports) {
+                        mHttpDnsConfig.getCurrentServer().updateServerIpv6sRank(sortedIps, ports);
+                    }
+                }));
+            } catch (Exception e) {
+
+            }
         }
     }
 }

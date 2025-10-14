@@ -16,11 +16,22 @@ public class HttpDns {
 
 	/**
 	 * 获取HttpDnsService对象
-	 *
+	 * @param accountId HttpDns控制台分配的AccountID
+	 * @return
+	 */
+	public synchronized static HttpDnsService getService(final String accountId) {
+		return holder.get(null, accountId, null);
+	}
+
+
+	/**
+	 * 获取HttpDnsService对象
+	 * 该方法已弃用，建议使用{@link HttpDns#getService(String)}方法
 	 * @param applicationContext 当前APP的Context
 	 * @param accountID          HttpDns控制台分配的AccountID
 	 * @return
 	 */
+	@Deprecated
 	public synchronized static HttpDnsService getService(final Context applicationContext,
 														 final String accountID) {
 		return holder.get(applicationContext, accountID, null);
@@ -28,12 +39,13 @@ public class HttpDns {
 
 	/**
 	 * 获取HttpDnsService对象，并启用鉴权功能
-	 *
+	 * 该方法已弃用，建议使用{@link HttpDns#getService(String)}方法
 	 * @param applicationContext 当前APP的Context
 	 * @param accountID          HttpDns控制台分配的AccountID
 	 * @param secretKey          用户鉴权私钥
 	 * @return
 	 */
+	@Deprecated
 	public synchronized static HttpDnsService getService(final Context applicationContext,
 														 final String accountID,
 														 final String secretKey) {
@@ -42,10 +54,11 @@ public class HttpDns {
 
 	/**
 	 * 获取HttpDnsService对象，初始化时不传入任何参数，靠统一接入服务获取相关参数
-	 *
+	 * 该方法已弃用，建议使用{@link HttpDns#getService(String)}方法
 	 * @param applicationContext 当前APP的Context
 	 * @return
 	 */
+	@Deprecated
 	public synchronized static HttpDnsService getService(final Context applicationContext) {
 		return holder.get(applicationContext, CommonUtil.getAccountId(applicationContext),
 			CommonUtil.getSecretKey(applicationContext));

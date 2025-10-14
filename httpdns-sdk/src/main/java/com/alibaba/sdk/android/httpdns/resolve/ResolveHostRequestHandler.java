@@ -5,19 +5,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.alibaba.sdk.android.httpdns.RequestIpType;
+import com.alibaba.sdk.android.httpdns.impl.AESEncryptService;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.impl.SignService;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
-import com.alibaba.sdk.android.httpdns.report.ReportManager;
+import com.alibaba.sdk.android.httpdns.request.BatchResolveHttpRequestStatusWatcher;
 import com.alibaba.sdk.android.httpdns.request.HttpRequest;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestConfig;
-import com.alibaba.sdk.android.httpdns.request.HttpRequestFailWatcher;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestTask;
 import com.alibaba.sdk.android.httpdns.request.HttpRequestWatcher;
 import com.alibaba.sdk.android.httpdns.request.RequestCallback;
 import com.alibaba.sdk.android.httpdns.request.RetryHttpRequest;
 import com.alibaba.sdk.android.httpdns.serverip.RegionServerScheduleService;
-import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 /**
  * 发起域名解析请求
@@ -29,22 +28,26 @@ public class ResolveHostRequestHandler {
 	private final CategoryController mCategoryController;
 	private final HashMap<String, String> mGlobalParams;
 	private final SignService mSignService;
+	private final AESEncryptService mAESEncryptService;
 
 	public ResolveHostRequestHandler(HttpDnsConfig config, RegionServerScheduleService scheduleService,
-									 SignService signService) {
+									 SignService signService, AESEncryptService aesEncryptService) {
 		this.mHttpDnsConfig = config;
 		this.mScheduleService = scheduleService;
-		this.mCategoryController = new CategoryController(scheduleService);
+		this.mCategoryController = new CategoryController(config, scheduleService);
 		this.mGlobalParams = new HashMap<>();
 		this.mSignService = signService;
+		this.mAESEncryptService = aesEncryptService;
 	}
 
 	public void requestResolveHost(final String host, final RequestIpType type,
 								   Map<String, String> extras, final String cacheKey,
 								   RequestCallback<ResolveHostResponse> callback) {
 		HttpRequestConfig requestConfig = ResolveHostHelper.getConfig(mHttpDnsConfig, host, type,
-			extras, cacheKey,
-			mGlobalParams, mSignService);
+			extras, cacheKey, mGlobalParams, mSignService, mAESEncryptService);
+		//补充可观测数据
+		requestConfig.setResolvingHost(host);
+		requestConfig.setResolvingIpType(type);
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("start resolve ip request for " + host + " " + type);
 		}
@@ -52,19 +55,18 @@ public class ResolveHostRequestHandler {
 	}
 
 	public void requestResolveHost(final ArrayList<String> hostList, final RequestIpType type,
-								   RequestCallback<BatchResolveHostResponse> callback) {
+								   RequestCallback<ResolveHostResponse> callback) {
 		HttpRequestConfig requestConfig = ResolveHostHelper.getConfig(mHttpDnsConfig, hostList,
-			type,
-			mSignService);
+			type, mSignService, mAESEncryptService);
+		requestConfig.setResolvingIpType(type);
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("start resolve hosts async for " + hostList.toString() + " " + type);
 		}
 
-		HttpRequest<BatchResolveHostResponse> request = new HttpRequest<>(
-			requestConfig, new BatchResolveHostResponseParser());
+		HttpRequest<ResolveHostResponse> request = new HttpRequest<>(
+			requestConfig, new ResolveHostResponseParser(mAESEncryptService));
 		request = new HttpRequestWatcher<>(request,
-			new HttpRequestFailWatcher(ReportManager.getReportManagerByAccount(
-				mHttpDnsConfig.getAccountId())));
+			new BatchResolveHttpRequestStatusWatcher(mHttpDnsConfig.getObservableManager()));
 		// 切换服务IP，更新服务IP
 		request = new HttpRequestWatcher<>(request, new ShiftServerWatcher(mHttpDnsConfig,
 			mScheduleService, mCategoryController));

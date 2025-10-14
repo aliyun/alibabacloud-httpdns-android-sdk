@@ -12,8 +12,8 @@ import com.alibaba.ams.emas.demo.constant.KEY_HOST_BLACK_LIST
 import com.alibaba.ams.emas.demo.constant.KEY_HOST_WITH_FIXED_IP
 import com.alibaba.ams.emas.demo.constant.KEY_IP_RANKING_ITEMS
 import com.alibaba.ams.emas.demo.constant.KEY_PRE_RESOLVE_HOST_LIST
+import com.alibaba.ams.emas.demo.constant.KEY_TAGS
 import com.alibaba.ams.emas.demo.constant.KEY_TTL_CHANGER
-import com.alibaba.sdk.android.httpdns.HttpDnsService
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingBean
 import com.aliyun.ams.httpdns.demo.R
 import kotlinx.coroutines.launch
@@ -30,16 +30,24 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     private var hostFixedIpList: MutableList<String> = mutableListOf()
     private var ipRankingList: MutableList<IPRankingBean> = mutableListOf()
     private var hostBlackList: MutableList<String> = mutableListOf()
-
-    private var dnsService: HttpDnsService? = null
+    private var tagsList: MutableList<String> = mutableListOf()
 
     private lateinit var preferences: SharedPreferences
 
     fun initData(listType: Int, infoList: MutableList<ListItem>) {
-        dnsService = HttpDnsServiceHolder.getHttpDnsService(getApplication())
         preferences = getAccountPreference(getApplication())
         viewModelScope.launch {
             when (listType) {
+                kListItemTag -> {
+                    val tagStr = preferences.getString(KEY_TAGS, null)
+                    val list = tagStr.toTagList()
+                    list?.let {
+                        tagsList.addAll(list)
+                        for (tag in tagsList) {
+                            infoList.add(ListItem(kListItemTag, tag, 0))
+                        }
+                    }
+                }
                 kListItemTypeHostWithFixedIP -> {
                     val hostFixedIpStr = preferences.getString(KEY_HOST_WITH_FIXED_IP, null)
                     val list = hostFixedIpStr.toHostList()
@@ -121,6 +129,19 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toAddTag(tag: String, listAdapter: ListAdapter) {
+        tagsList.add(tag)
+        saveTags()
+
+        listAdapter.addItemData(
+            ListItem(
+                kListItemTag,
+                tag,
+                0
+            )
+        )
+    }
+
     fun toAddHostWithFixedIP(host: String, listAdapter: ListAdapter) {
         if (hostFixedIpList.contains(host)) {
             Toast.makeText(
@@ -158,6 +179,19 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
                     0
                 )
             )
+        }
+    }
+
+    private fun saveTags() {
+        viewModelScope.launch {
+            val array = JSONArray()
+            for (tag in tagsList) {
+                array.put(tag)
+            }
+            val tagStr = array.toString()
+            val editor = preferences.edit()
+            editor.putString(KEY_TAGS, tagStr)
+            editor.apply()
         }
     }
 
@@ -312,6 +346,11 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             editor.putString(KEY_BATCH_RESOLVE_HOST_LIST, BatchResolveCacheHolder.convertBatchResolveString())
             editor.apply()
         }
+    }
+
+    fun onTagDeleted(position: Int) {
+        tagsList.removeAt(position)
+        saveTags()
     }
 
     fun onHostWithFixedIPDeleted(position: Int) {

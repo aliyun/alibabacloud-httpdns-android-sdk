@@ -1,5 +1,7 @@
 package com.alibaba.sdk.android.httpdns.resolve;
 
+import android.text.TextUtils;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -10,11 +12,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HTTPDNSResultWrapper;
 import com.alibaba.sdk.android.httpdns.HttpDnsCallback;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.impl.HostResolveLocker;
 import com.alibaba.sdk.android.httpdns.impl.HttpDnsConfig;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
+import com.alibaba.sdk.android.httpdns.observable.ObservableConstants;
+import com.alibaba.sdk.android.httpdns.observable.event.CallSdkApiEvent;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingCallback;
 import com.alibaba.sdk.android.httpdns.ranking.IPRankingService;
 import com.alibaba.sdk.android.httpdns.request.HttpException;
@@ -61,20 +66,23 @@ public class ResolveHostService {
 			}
 			return Constants.EMPTY;
 		}
+
+		long start = System.currentTimeMillis();
+
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d(
 				"sync non blocking request host " + host + " with type " + type + " extras : " + CommonUtil.toString(
 					extras) + " cacheKey " + cacheKey);
 		}
-		HTTPDNSResult result = mResultRepo.getIps(host, type, cacheKey);
+		HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, cacheKey);
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("host " + host + " result is " + CommonUtil.toString(result));
 		}
 		if (result == null || result.isExpired()) {
 			if (type == RequestIpType.both) {
 				// 过滤掉 未过期的请求
-				HTTPDNSResult resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
-				HTTPDNSResult resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
+				HTTPDNSResultWrapper resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
+				HTTPDNSResultWrapper resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
 				boolean v4Invalid =
 					resultV4 == null || resultV4.isExpired();
 				boolean v6Invalid =
@@ -99,11 +107,17 @@ public class ResolveHostService {
 					"request host " + host + " for " + type + " and return " + result.toString()
 						+ " immediately");
 			}
-			return result;
+
+			addCallSdkApiEvent(getCallSdkApiEvent(ObservableConstants.RESOLVE_API_SYN_NON_BLOCKING, host, type, true, result, start),
+					result);
+			return result.getHTTPDNSResult();
 		} else {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.i("request host " + host + " and return empty immediately");
 			}
+
+			addCallSdkApiEvent(getCallSdkApiEvent(ObservableConstants.RESOLVE_API_SYN_NON_BLOCKING, host, type, false, result, start),
+					null);
 			return Constants.EMPTY;
 		}
 	}
@@ -119,28 +133,33 @@ public class ResolveHostService {
 			mRequestHandler.requestResolveHost(host, type, extras, cacheKey,
 				new RequestCallback<ResolveHostResponse>() {
 					@Override
-					public void onSuccess(final ResolveHostResponse interpretHostResponse) {
+					public void onSuccess(final ResolveHostResponse resolveHostResponse) {
 						if (HttpDnsLog.isPrint()) {
 							HttpDnsLog.i("ip request for " + host + " " + type + " return "
-								+ interpretHostResponse.toString());
+								+ resolveHostResponse.toString());
 						}
-						mResultRepo.save(region, host, type, interpretHostResponse.getExtras(),
-							cacheKey,
-							interpretHostResponse);
+						mResultRepo.save(region, resolveHostResponse, cacheKey);
+
 						if (type == RequestIpType.v4 || type == RequestIpType.both) {
-							mIpIPRankingService.probeIpv4(host, interpretHostResponse.getIps(),
-								new IPRankingCallback() {
-									@Override
-									public void onResult(String host, String[] sortedIps) {
-										if (HttpDnsLog.isPrint()) {
-											HttpDnsLog.i(
-												"ip probe for " + host + " " + type + " return "
-													+ CommonUtil.translateStringArray(sortedIps));
-										}
-										mResultRepo.update(host, RequestIpType.v4, cacheKey,
-											sortedIps);
-									}
-								});
+							for (final ResolveHostResponse.HostItem item :
+									resolveHostResponse.getItems()) {
+								if (item.getIpType() == RequestIpType.v4) {
+									mIpIPRankingService.probeIpv4(host, item.getIps(),
+											new IPRankingCallback() {
+												@Override
+												public void onResult(String host, String[] sortedIps) {
+													if (HttpDnsLog.isPrint()) {
+														HttpDnsLog.i(
+																"ip probe for " + host + " " + type + " return "
+																		+ CommonUtil.translateStringArray(sortedIps));
+													}
+													mResultRepo.update(host, RequestIpType.v4, cacheKey,
+															sortedIps);
+												}
+											});
+								}
+							}
+
 						}
 						mAsyncLocker.endResolve(host, type, cacheKey);
 					}
@@ -148,15 +167,26 @@ public class ResolveHostService {
 					@Override
 					public void onFail(Throwable throwable) {
 						HttpDnsLog.w("ip request for " + host + " fail", throwable);
+						if (throwable instanceof Exception) {
+							String query = "4";
+							if (type == RequestIpType.v6) {
+								query = "6";
+							}else if (type == RequestIpType.both) {
+								query = "4,6";
+							}
+							String errorMsg = (throwable instanceof HttpException) ? throwable.getMessage() : throwable.toString();
+							HttpDnsLog.w("RESOLVE FAIL, HOST:" + host + ", QUERY:" + query
+									+ ", Msg:" + errorMsg);
+						}
 						if (throwable instanceof HttpException
 							&& ((HttpException)throwable).shouldCreateEmptyCache()) {
-							ResolveHostResponse emptyResponse =
-								ResolveHostResponse.createEmpty(
-									host, 60 * 60);
-							mResultRepo.save(region, host, type, emptyResponse.getExtras(),
-								cacheKey,
-								emptyResponse);
+							ArrayList<String> targetHost = new ArrayList<>();
+							targetHost.add(host);
+							ResolveHostResponse emptyResponse = ResolveHostResponse.createEmpty(
+									targetHost, type, 60 * 60);
+							mResultRepo.save(region, emptyResponse, cacheKey);
 						}
+
 						mAsyncLocker.endResolve(host, type, cacheKey);
 					}
 				});
@@ -174,11 +204,14 @@ public class ResolveHostService {
 			}
 			return degradationLocalDns(host);
 		}
+
+		long start = System.currentTimeMillis();
+
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("sync request host " + host + " with type " + type + " extras : "
 				+ CommonUtil.toString(extras) + " cacheKey " + cacheKey);
 		}
-		HTTPDNSResult result = mResultRepo.getIps(host, type, cacheKey);
+		HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, cacheKey);
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("host " + host + " result in cache is " + CommonUtil.toString(result));
 		}
@@ -204,7 +237,9 @@ public class ResolveHostService {
 				}
 			}
 
-			return result;
+			addCallSdkApiEvent(getCallSdkApiEvent(ObservableConstants.RESOLVE_API_SYNC, host, type, true, result, start), result);
+
+			return result.getHTTPDNSResult();
 		}
 
 		//如果没有缓存，或者有过期缓存但是不允许使用过期缓存
@@ -212,8 +247,8 @@ public class ResolveHostService {
 			// 没有缓存，或者缓存过期，或者是从数据库读取的 需要解析
 			if (type == RequestIpType.both) {
 				// 过滤掉 未过期的请求
-				HTTPDNSResult resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
-				HTTPDNSResult resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
+				HTTPDNSResultWrapper resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
+				HTTPDNSResultWrapper resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
 				boolean v4Invalid =
 					resultV4 == null || resultV4.isExpired();
 				boolean v6Invalid =
@@ -233,7 +268,9 @@ public class ResolveHostService {
 			}
 		}
 
+		CallSdkApiEvent callSdkApiEvent = getCallSdkApiEvent(ObservableConstants.RESOLVE_API_SYNC, host, type, false, result, start);
 		result = mResultRepo.getIps(host, type, cacheKey);
+
 		if (result != null && (!result.isExpired() || mEnableExpiredIp)) {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.i(
@@ -249,11 +286,14 @@ public class ResolveHostService {
 				}
 			}
 
-			return result;
+			addCallSdkApiEvent(callSdkApiEvent, result);
+			return result.getHTTPDNSResult();
 		} else {
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.i("request host " + host + " and return empty after request");
 			}
+
+			addCallSdkApiEvent(callSdkApiEvent, null);
 			return degradationLocalDns(host);
 		}
 	}
@@ -295,7 +335,7 @@ public class ResolveHostService {
 
 	private void syncResolveHostInner(final String host, final RequestIpType type,
 									  Map<String, String> extras, final String cacheKey,
-									  HTTPDNSResult result) {
+									  HTTPDNSResultWrapper result) {
 		long start = System.currentTimeMillis();
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.i("sync start request for " + host + " " + type);
@@ -306,28 +346,33 @@ public class ResolveHostService {
 			mRequestHandler.requestResolveHost(host, type, extras, cacheKey,
 				new RequestCallback<ResolveHostResponse>() {
 					@Override
-					public void onSuccess(final ResolveHostResponse interpretHostResponse) {
+					public void onSuccess(final ResolveHostResponse resolveHostResponse) {
 						if (HttpDnsLog.isPrint()) {
 							HttpDnsLog.i("ip request for " + host + " " + type + " return "
-								+ interpretHostResponse.toString());
+								+ resolveHostResponse.toString());
 						}
-						mResultRepo.save(region, host, type, interpretHostResponse.getExtras(),
-							cacheKey,
-							interpretHostResponse);
+						mResultRepo.save(region, resolveHostResponse, cacheKey);
+
 						if (type == RequestIpType.v4 || type == RequestIpType.both) {
-							mIpIPRankingService.probeIpv4(host, interpretHostResponse.getIps(),
-								new IPRankingCallback() {
-									@Override
-									public void onResult(String host, String[] sortedIps) {
-										if (HttpDnsLog.isPrint()) {
-											HttpDnsLog.i(
-												"ip probe for " + host + " " + type + " return "
-													+ CommonUtil.translateStringArray(sortedIps));
-										}
-										mResultRepo.update(host, RequestIpType.v4, cacheKey,
-											sortedIps);
-									}
-								});
+							for (final ResolveHostResponse.HostItem item :
+									resolveHostResponse.getItems()) {
+								if (item.getIpType() == RequestIpType.v4) {
+									mIpIPRankingService.probeIpv4(host, item.getIps(),
+											new IPRankingCallback() {
+												@Override
+												public void onResult(String host, String[] sortedIps) {
+													if (HttpDnsLog.isPrint()) {
+														HttpDnsLog.i(
+																"ip probe for " + host + " " + type + " return "
+																		+ CommonUtil.translateStringArray(sortedIps));
+													}
+													mResultRepo.update(host, RequestIpType.v4, cacheKey,
+															sortedIps);
+												}
+											});
+								}
+							}
+
 						}
 						mLocker.endResolve(host, type, cacheKey);
 					}
@@ -335,15 +380,26 @@ public class ResolveHostService {
 					@Override
 					public void onFail(Throwable throwable) {
 						HttpDnsLog.w("ip request for " + host + " fail", throwable);
+						if (throwable instanceof Exception) {
+							String query = "4";
+							if (type == RequestIpType.v6) {
+								query = "6";
+							}else if (type == RequestIpType.both) {
+								query = "4,6";
+							}
+							String errorMsg = (throwable instanceof HttpException) ? throwable.getMessage() : throwable.toString();
+							HttpDnsLog.w("RESOLVE FAIL, HOST:" + host + ", QUERY:" + query
+									+ ", Msg:" + errorMsg);
+						}
 						if (throwable instanceof HttpException
 							&& ((HttpException)throwable).shouldCreateEmptyCache()) {
-							ResolveHostResponse emptyResponse =
-								ResolveHostResponse.createEmpty(
-									host, 60 * 60);
-							mResultRepo.save(region, host, type, emptyResponse.getExtras(),
-								cacheKey,
-								emptyResponse);
+							ArrayList<String> targetHost = new ArrayList<>();
+							targetHost.add(host);
+							ResolveHostResponse emptyResponse = ResolveHostResponse.createEmpty(
+									targetHost, type, 60 * 60);
+							mResultRepo.save(region, emptyResponse, cacheKey);
 						}
+
 						mLocker.endResolve(host, type, cacheKey);
 					}
 				});
@@ -403,12 +459,15 @@ public class ResolveHostService {
 			}
 			return;
 		}
+
+		long start = System.currentTimeMillis();
+
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d(
 					"async request host " + host + " with type " + type + " extras : " + CommonUtil.toString(
 							extras) + " cacheKey " + cacheKey);
 		}
-		HTTPDNSResult result = mResultRepo.getIps(host, type, cacheKey);
+		HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, cacheKey);
 		if (HttpDnsLog.isPrint()) {
 			HttpDnsLog.d("host " + host + " result in cache is " + CommonUtil.toString(result));
 		}
@@ -428,7 +487,7 @@ public class ResolveHostService {
 			//可能是空结果，如果开启降级local dns，走local dns解析
 			if ((result.getIps() == null || result.getIps().length == 0)
 					&& (result.getIpv6s() == null || result.getIpv6s().length == 0)) {
-				if (callback != null && mHttpDnsConfig.isEnableDegradationLocalDns()) {
+				if (mHttpDnsConfig.isEnableDegradationLocalDns()) {
 					mHttpDnsConfig.getResolveWorker().execute(new Runnable() {
 						@Override
 						public void run() {
@@ -439,38 +498,41 @@ public class ResolveHostService {
 				}
 			}
 
+			addCallSdkApiEvent(getCallSdkApiEvent(ObservableConstants.RESOLVE_API_ASYNC, host, type, true, result, start), result);
+
 			if (callback != null) {
-				callback.onHttpDnsCompleted(result);
+				callback.onHttpDnsCompleted(result.getHTTPDNSResult());
 			}
 			return;
 		}
 
+		CallSdkApiEvent callSdkApiEvent = getCallSdkApiEvent(ObservableConstants.RESOLVE_API_ASYNC, host, type, false, result, start);
 		//没有可用的解析结果，需要发起请求
 		if (type == RequestIpType.both) {
 			// 过滤掉 未过期的请求
-			HTTPDNSResult resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
-			HTTPDNSResult resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
+			HTTPDNSResultWrapper resultV4 = mResultRepo.getIps(host, RequestIpType.v4, cacheKey);
+			HTTPDNSResultWrapper resultV6 = mResultRepo.getIps(host, RequestIpType.v6, cacheKey);
 			boolean v4Invalid =
 					resultV4 == null || resultV4.isExpired();
 			boolean v6Invalid =
 					resultV6 == null || resultV6.isExpired();
 			if (v4Invalid && v6Invalid) {
 				// 都过期，不过滤
-				asyncResolveHost(host, type, extras, cacheKey, callback);
+				asyncResolveHost(host, type, extras, cacheKey, callback, callSdkApiEvent);
 			} else if (v4Invalid) {
 				// 仅v4过期
-				asyncResolveHost(host, RequestIpType.v4, extras, cacheKey, callback);
+				asyncResolveHost(host, RequestIpType.v4, extras, cacheKey, callback, callSdkApiEvent);
 			} else if (v6Invalid) {
 				// 仅v6过期
-				asyncResolveHost(host, RequestIpType.v6, extras, cacheKey, callback);
+				asyncResolveHost(host, RequestIpType.v6, extras, cacheKey, callback, callSdkApiEvent);
 			}
 		} else {
-			asyncResolveHost(host, type, extras, cacheKey, callback);
+			asyncResolveHost(host, type, extras, cacheKey, callback, callSdkApiEvent);
 		}
 	}
 
 	private void asyncResolveHost(String host, RequestIpType type, Map<String, String> extras,
-									   String cacheKey, HttpDnsCallback callback) {
+								  String cacheKey, HttpDnsCallback callback, CallSdkApiEvent event) {
 		mHttpDnsConfig.getResolveWorker().execute(new Runnable() {
 			@Override
 			public void run() {
@@ -501,7 +563,10 @@ public class ResolveHostService {
 					HttpDnsLog.e(e.getMessage(), e);
 				}
 
-				HTTPDNSResult result = mResultRepo.getIps(host, type, cacheKey);
+				HTTPDNSResultWrapper result = mResultRepo.getIps(host, type, cacheKey);
+
+				addCallSdkApiEvent(event, result);
+
 				if (result != null && !result.isExpired()) {
 					if (HttpDnsLog.isPrint()) {
 						HttpDnsLog.i(
@@ -519,7 +584,7 @@ public class ResolveHostService {
 							}
 						}
 
-						callback.onHttpDnsCompleted(result);
+						callback.onHttpDnsCompleted(result.getHTTPDNSResult());
 					}
 				} else {
 					if (HttpDnsLog.isPrint()) {
@@ -538,4 +603,34 @@ public class ResolveHostService {
 		this.mEnableExpiredIp = enableExpiredIp;
 	}
 
+	private void addCallSdkApiEvent(CallSdkApiEvent event, HTTPDNSResultWrapper result) {
+		event.setCostTime((int) (System.currentTimeMillis() - event.getTimestamp()));
+
+		if (result != null) {
+			event.setServerIp(result.getServerIp());
+			event.setHttpDnsIps(result.getIps(), result.getIpv6s());
+			if (TextUtils.isEmpty(event.getHttpDnsIps())) {
+				event.setStatusCode(204);
+			} else {
+				event.setResultStatus(ObservableConstants.NOT_EMPTY_RESULT);
+				event.setStatusCode(200);
+			}
+		} else {
+			event.setHttpDnsIps(null, null);
+			event.setStatusCode(204);
+		}
+
+		mHttpDnsConfig.getObservableManager().addObservableEvent(event);
+	}
+
+	private CallSdkApiEvent getCallSdkApiEvent(int api, String host, RequestIpType type, boolean hitCache, HTTPDNSResultWrapper cacheResult, long start) {
+		CallSdkApiEvent callSdkApiEvent = new CallSdkApiEvent(start);
+		callSdkApiEvent.setRequestType(type);
+		callSdkApiEvent.setHostName(host);
+		callSdkApiEvent.setInvokeApi(api);
+		int cacheScene = cacheResult == null ? ObservableConstants.CACHE_NONE : (hitCache ? (cacheResult.isExpired() ? ObservableConstants.CACHE_EXPIRED_USE : ObservableConstants.CACHE_NOT_EXPIRED) : ObservableConstants.CACHE_EXPIRED_NOT_USE);
+		callSdkApiEvent.setCacheScene(cacheScene);
+
+		return callSdkApiEvent;
+	}
 }

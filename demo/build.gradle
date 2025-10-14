@@ -22,14 +22,15 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         buildConfigField "String", "HTTPDNS_VERSION", "\"${gradle.httpVersion}\""
-        buildConfigField "String", "ACCOUNT_ID", "\"请替换为测试用B实例的accountId\""
-        buildConfigField "String", "SECRET_KEY", "\"请替换为测试用A实例的secret\""
+        buildConfigField "String", "ACCOUNT_ID", "\"请替换为测试用实例的accountId\""
+        buildConfigField "String", "SECRET_KEY", "\"请替换为测试用实例的secret\""
+        buildConfigField "String", "AES_SECRET_KEY", "\"请替换为测试用实例的aes\""
     }
 
     buildTypes {
 
         debug {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
@@ -109,8 +110,9 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
 
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
 //    implementation project(path: ':httpdns-sdk')
-    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.4.3'
+    implementation 'com.aliyun.ams:alicloud-android-httpdns:2.6.6'
 
     implementation('com.alibaba:fastjson:1.1.73.android@jar')
 //    implementation('com.emas.hybrid:emas-hybrid-android:1.1.0.4-public-SNAPSHOT') {

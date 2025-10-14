@@ -6,8 +6,13 @@
     <string name="title_info">Information</string>
     <string name="init_tip">Please init HttpDns first</string>
 
+    <string name="enable_auth_mode">Enable Auth Mode</string>
+    <string name="secret_key_location">Secret key is in config</string>
+    <string name="enable_encrypt_mode">Enable Encrypt Mode</string>
     <string name="enable_expired_ip">Enable Expired IP</string>
     <string name="enable_local_cache">Enable Cache IP</string>
+    <string name="cache_expire_time">cache expire time</string>
+    <string name="cache_expire_time_unit">the unit of cache expire time is day.</string>
     <string name="enable_https">Enable HTTPS</string>
     <string name="enable_downgrade">Enable Degrade</string>
     <string name="enable_network_changed_pre_resolve">Enable Automatic Refresh</string>
@@ -19,6 +24,7 @@
     <string name="singapore">Singapore</string>
     <string name="germany">Germany</string>
     <string name="america">America</string>
+    <string name="pre">Pre</string>
 
     <string name="select_region">Choose Region</string>
     <string name="confirm">Confirm</string>
@@ -52,6 +58,7 @@
     <string name="add_pre_resolve">Add Pre-Resolve Domain</string>
     <string name="add_pre_resolve_hint">Please input the domain you want to pre-resolve</string>
     <string name="pre_resolve_list">Pre-Resolve Domain List</string>
+    <string name="add_tag">Add Tag</string>
     <string name="pre_resolve_host_duplicate">The host %s is already added to pre-resolve List</string>
     <string name="init_httpdns">Init HttpDns</string>
     <string name="inited_httpdns">HttpDns Inited</string>
@@ -68,6 +75,8 @@
     <string name="add_host_fixed_ip">Add Host with fixed IP</string>
     <string name="host_fixed_ip_empty">Host with fixed IP is empty</string>
     <string name="host_fixed_ip_duplicate">The host %s is already added to fixed IP List</string>
+
+    <string name="add_tag_hint">Please input the tag</string>
 
     <string name="add_host_to_black_list_hint">Please input the host not use HttpDns</string>
     <string name="add_host_to_black_list">Add Host not use HttpDns</string>
@@ -93,6 +102,7 @@
     <string name="delete">Delete</string>
     <string name="clear_all_cache">Clear all HttpDNS config cache</string>
     <string name="all_cache_cleared">All HttpDNDS config cache have been cleared</string>
+    <string name="clear_dns_cache">Clear Dns Cache (500)</string>
 
     <string name="input_the_sdns_params">The sdns params</string>
     <string name="input_the_sdns_params_help_text">json object format</string>

@@ -31,6 +31,24 @@ fun String?.toHostList(): MutableList<String>? {
     return null
 }
 
+fun String?.toTagList(): MutableList<String>? {
+    if (this == null) {
+        return null
+    }
+
+    try {
+        val array = JSONArray(this)
+        val list = mutableListOf<String>()
+        for (i in 0 until array.length()) {
+            list.add(array.getString(i))
+        }
+        return list
+    } catch (e: JSONException) {
+        e.printStackTrace()
+    }
+    return null
+}
+
 fun String?.toIPRankingList(): MutableList<IPRankingBean>? {
     if (this == null) {
         return null

@@ -17,12 +17,16 @@ import com.alibaba.sdk.android.httpdns.Region;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.SyncService;
 import com.alibaba.sdk.android.httpdns.cache.RecordDBHelper;
+import com.alibaba.sdk.android.httpdns.observable.ObservableConstants;
+import com.alibaba.sdk.android.httpdns.observable.event.CleanHostCacheEvent;
 import com.alibaba.sdk.android.httpdns.resolve.HostFilter;
+import com.alibaba.sdk.android.httpdns.resolve.ResolveHostCache;
 import com.alibaba.sdk.android.httpdns.resolve.ResolveHostCacheGroup;
 import com.alibaba.sdk.android.httpdns.resolve.ResolveHostRequestHandler;
 import com.alibaba.sdk.android.httpdns.resolve.ResolveHostResultRepo;
 import com.alibaba.sdk.android.httpdns.resolve.ResolveHostService;
 import com.alibaba.sdk.android.httpdns.resolve.BatchResolveHostService;
+import com.alibaba.sdk.android.httpdns.HTTPDNSResultWrapper;
 import com.alibaba.sdk.android.httpdns.log.HttpDnsLog;
 import com.alibaba.sdk.android.httpdns.net.HttpDnsNetworkDetector;
 import com.alibaba.sdk.android.httpdns.net.NetworkStateManager;
@@ -35,6 +39,7 @@ import com.alibaba.sdk.android.httpdns.utils.CommonUtil;
 import com.alibaba.sdk.android.httpdns.utils.Constants;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Looper;
 
 /**
@@ -53,17 +58,30 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	protected BatchResolveHostService mBatchResolveHostService;
 	private HostFilter mFilter;
 	private SignService mSignService;
+	private AESEncryptService mAESEncryptService;
 	private boolean resolveAfterNetworkChange = true;
     /**
 	 * crash defend 默认关闭
 	 */
 	private boolean mCrashDefendEnabled = false;
+	public static Context sContext;
 
 	public HttpDnsServiceImpl(Context context, final String accountId, String secret) {
 		try {
-			mHttpDnsConfig = new HttpDnsConfig(context, accountId);
+			InitConfig config = InitConfig.getInitConfig(accountId);
+			sContext = (config != null && config.getContext() != null) ? config.getContext() : context;
+			secret = (config != null && config.getSecretKey() != null) ? config.getSecretKey() : secret;
+			mHttpDnsConfig = new HttpDnsConfig(sContext, accountId, secret);
+			if (sContext == null) {
+				if (HttpDnsLog.isPrint()) {
+					HttpDnsLog.e("init httpdns with null context!!");
+				}
+				mHttpDnsConfig.setEnabled(false);
+				return;
+			}
 			mFilter = new HostFilter();
 			mSignService = new SignService(secret);
+			mAESEncryptService = new AESEncryptService();
 			mIpIPRankingService = new IPRankingService(this.mHttpDnsConfig);
 			mRegionServerRankingService = new RegionServerRankingService(mHttpDnsConfig);
 			mResultRepo = new ResolveHostResultRepo(this.mHttpDnsConfig, this.mIpIPRankingService,
@@ -71,7 +89,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 				new ResolveHostCacheGroup());
 			mScheduleService = new RegionServerScheduleService(this.mHttpDnsConfig, this);
 			mRequestHandler = new ResolveHostRequestHandler(mHttpDnsConfig, mScheduleService,
-                mSignService);
+                mSignService, mAESEncryptService);
 			HostResolveLocker asyncLocker = new HostResolveLocker();
 			mResolveHostService = new ResolveHostService(this.mHttpDnsConfig,
 				mIpIPRankingService,
@@ -86,19 +104,19 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			setupInitConfig(accountId);
 
 			if (mCrashDefendEnabled) {
-				initCrashDefend(context, mHttpDnsConfig);
+				initCrashDefend(sContext, mHttpDnsConfig);
 			}
 			if (!mHttpDnsConfig.isEnabled()) {
 				HttpDnsLog.w("init fail, crash defend");
 				return;
 			}
-			NetworkStateManager.getInstance().init(context);
+			NetworkStateManager.getInstance().init(sContext);
 			NetworkStateManager.getInstance().addListener(this);
-			if (mHttpDnsConfig.getCurrentServer().shouldUpdateServerIp()) {
-				mScheduleService.updateRegionServerIps();
-			}
+
+			tryUpdateRegionServer(sContext, accountId);
+
 			mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
-			favorInit(context, accountId);
+			favorInit(sContext, accountId);
 
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("httpdns service is init " + accountId);
@@ -115,6 +133,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			// 先设置和网络相关的内容
 			this.mHttpDnsConfig.setTimeout(config.getTimeout());
 			this.mHttpDnsConfig.setHTTPSRequestEnabled(config.isEnableHttps());
+			mHttpDnsConfig.setBizTags(config.getBizTags());
 			mHttpDnsConfig.setEnableDegradationLocalDns(config.isEnableDegradationLocalDns());
 			// 再设置一些可以提前，没有副作用的内容
 			mResolveHostService.setEnableExpiredIp(config.isEnableExpiredIp());
@@ -138,9 +157,12 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 				mFilter.setFilter(config.getNotUseHttpDnsFilter());
 			}
 
+			mHttpDnsConfig.getObservableManager().positiveEnableObservable(config.isEnableObservable());
+
 			mCrashDefendEnabled = config.isEnableCrashDefend();
 
 			mRequestHandler.setSdnsGlobalParams(config.getSdnsGlobalParams());
+			mAESEncryptService.setAesSecretKey(config.getAesSecretKey());
 		}
 
 	}
@@ -180,10 +202,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 		if (!mHttpDnsConfig.isEnabled()) {
 			return;
 		}
-		if (secret == null || secret.equals("")) {
-			HttpDnsLog.e("set empty secret!?");
-		}
-		this.mSignService.setSecret(secret);
+		InitConfig config = InitConfig.getInitConfig(mHttpDnsConfig.getAccountId());
+		secret = (config != null && config.getSecretKey() != null) ? config.getSecretKey() : secret;
+		this.mSignService.setSecretKey(secret);
 	}
 
 	@Override
@@ -283,7 +304,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, null).getIps();
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, getCurrentNetworkKey()).getIps();
 	}
 
 	@Override
@@ -300,7 +321,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, null).getIps();
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v4, null, getCurrentNetworkKey()).getIps();
 	}
 
 	@Override
@@ -317,7 +338,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, null)
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, getCurrentNetworkKey())
 			.getIpv6s();
 	}
 
@@ -335,7 +356,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return new String[0];
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, null)
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.v6, null, getCurrentNetworkKey())
 			.getIpv6s();
 	}
 
@@ -353,7 +374,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, getCurrentNetworkKey());
 	}
 
 	@Override
@@ -370,7 +391,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			HttpDnsLog.i("host is ip. " + host);
 			return Constants.EMPTY;
 		}
-		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, RequestIpType.both, null, getCurrentNetworkKey());
 	}
 
 	@Override
@@ -388,7 +409,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 	}
 
 	@Override
@@ -406,7 +427,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 	}
 
 	@Override
@@ -515,7 +536,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("request in main thread, use async request");
 			}
-			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 		}
 		return mResolveHostService.resolveHostSync(host, type, params, cacheKey);
 	}
@@ -586,7 +607,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			//region变化，服务IP变成对应的预置IP，触发测速
 			mRegionServerRankingService.rankServiceIp(mHttpDnsConfig.getCurrentServer());
 		}
-		mScheduleService.updateRegionServerIps(region);
+		mScheduleService.updateRegionServerIps(region, Constants.UPDATE_REGION_SERVER_SCENES_REGION_CHANGE);
 	}
 
 	@Override
@@ -645,38 +666,19 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			mHttpDnsConfig.getWorker().execute(new Runnable() {
 				@Override
 				public void run() {
+                    // 获取当前网络标识
+                    String requestNetworkKey = getCurrentNetworkKey();
+
+                    // 获取历史域名
 					HashMap<String, RequestIpType> allHost = mResultRepo.getAllHostWithoutFixedIP();
+
 					if (HttpDnsLog.isPrint()) {
-						HttpDnsLog.d("network change, clean record");
+						HttpDnsLog.d("network change to " + requestNetworkKey + ", smart resolve hosts");
 					}
-					mResultRepo.clearMemoryCacheForHostWithoutFixedIP();
+
+                    // 智能增量解析
 					if (resolveAfterNetworkChange && mHttpDnsConfig.isEnabled()) {
-						ArrayList<String> v4List = new ArrayList<>();
-						ArrayList<String> v6List = new ArrayList<>();
-						ArrayList<String> bothList = new ArrayList<>();
-						for (Map.Entry<String, RequestIpType> entry : allHost.entrySet()) {
-							if (entry.getValue() == RequestIpType.v4) {
-								v4List.add(entry.getKey());
-							} else if (entry.getValue() == RequestIpType.v6) {
-								v6List.add(entry.getKey());
-							} else {
-								bothList.add(entry.getKey());
-							}
-						}
-						if (v4List.size() > 0) {
-							mBatchResolveHostService.batchResolveHostAsync(v4List, RequestIpType.v4);
-						}
-						if (v6List.size() > 0) {
-							mBatchResolveHostService.batchResolveHostAsync(v6List, RequestIpType.v6);
-						}
-						if (bothList.size() > 0) {
-							mBatchResolveHostService.batchResolveHostAsync(bothList, RequestIpType.both);
-						}
-						if (v4List.size() > 0 || v6List.size() > 0 || bothList.size() > 0) {
-							if (HttpDnsLog.isPrint()) {
-								HttpDnsLog.d("network change, resolve hosts");
-							}
-						}
+						smartBatchResolve(allHost, requestNetworkKey);
 					}
 				}
 			});
@@ -706,9 +708,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("request in main thread, use async request");
 			}
-			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 		}
-		return mResolveHostService.resolveHostSync(host, type, null, null);
+		return mResolveHostService.resolveHostSync(host, type, null, getCurrentNetworkKey());
 	}
 
 	private RequestIpType changeTypeWithNetType(HttpDnsSettings.NetworkDetector networkDetector,
@@ -728,13 +730,19 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 	}
 
 	public void cleanHostCache(ArrayList<String> hosts) {
+		CleanHostCacheEvent cleanHostCacheEvent = new CleanHostCacheEvent();
 		if (hosts == null || hosts.size() == 0) {
 			// 清理所有host
 			mResultRepo.clear();
+			cleanHostCacheEvent.setTag(ObservableConstants.CLEAN_ALL_HOST_CACHE);
 		} else {
 			// 清理选中的host
+			cleanHostCacheEvent.setTag(ObservableConstants.CLEAN_SPECIFY_HOST_CACHE);
 			mResultRepo.clear(hosts);
 		}
+		cleanHostCacheEvent.setStatusCode(200);
+		cleanHostCacheEvent.setCostTime((int) (System.currentTimeMillis() - cleanHostCacheEvent.getTimestamp()));
+		mHttpDnsConfig.getObservableManager().addObservableEvent(cleanHostCacheEvent);
 	}
 
 	@Override
@@ -756,9 +764,9 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			if (HttpDnsLog.isPrint()) {
 				HttpDnsLog.d("request in main thread, use async request");
 			}
-			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+			return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 		}
-		return mResolveHostService.resolveHostSync(host, type, null, null);
+		return mResolveHostService.resolveHostSync(host, type, null, getCurrentNetworkKey());
 	}
 
 	@Override
@@ -787,7 +795,7 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
 
-		mResolveHostService.resolveHostAsync(host, type, null, null, callback);
+		mResolveHostService.resolveHostAsync(host, type, null, getCurrentNetworkKey(), callback);
 	}
 
 	@Override
@@ -805,6 +813,97 @@ public class HttpDnsServiceImpl implements HttpDnsService, OnRegionServerIpUpdat
 			return Constants.EMPTY;
 		}
 		type = changeTypeWithNetType(mHttpDnsConfig.getNetworkDetector(), type);
-		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, null);
+		return mResolveHostService.resolveHostSyncNonBlocking(host, type, null, getCurrentNetworkKey());
 	}
+
+	private void tryUpdateRegionServer(Context context, String accountId) {
+
+		if (mHttpDnsConfig.getCurrentServer().shouldUpdateServerIp()) {
+			mScheduleService.updateRegionServerIps(Constants.UPDATE_REGION_SERVER_SCENES_INIT);
+		} else {
+			InitConfig config = InitConfig.getInitConfig(accountId);
+			String initRegion = Constants.REGION_DEFAULT;
+			if (config != null) {
+				initRegion = CommonUtil.fixRegion(config.getRegion());
+			}
+			SharedPreferences sp = context.getSharedPreferences(
+					Constants.CONFIG_CACHE_PREFIX + accountId, Context.MODE_PRIVATE);
+			String cachedRegion = sp.getString(Constants.CONFIG_CURRENT_SERVER_REGION,
+					Constants.REGION_DEFAULT);
+
+			if (!CommonUtil.regionEquals(cachedRegion, initRegion)) {
+				mScheduleService.updateRegionServerIps(Constants.UPDATE_REGION_SERVER_SCENES_REGION_CHANGE);
+			}
+		}
+	}
+
+    /**
+     * 智能增量解析：只解析当前网络环境下缺失的域名
+     *
+     * @param allHosts 所有历史域名
+     * @param requestNetworkKey 请求时的网络标识
+     */
+    private void smartBatchResolve(HashMap<String, RequestIpType> allHosts, String requestNetworkKey) {
+        ArrayList<String> v4List = new ArrayList<>();
+        ArrayList<String> v6List = new ArrayList<>();
+        ArrayList<String> bothList = new ArrayList<>();
+
+        // 检查当前网络环境下是否需要解析
+        for (Map.Entry<String, RequestIpType> entry : allHosts.entrySet()) {
+            String host = entry.getKey();
+            RequestIpType type = entry.getValue();
+
+            // 使用请求时的网络标识检查缓存
+            if (needsResolveInNetwork(host, type, requestNetworkKey)) {
+                if (type == RequestIpType.v4) {
+                    v4List.add(host);
+                } else if (type == RequestIpType.v6) {
+                    v6List.add(host);
+                } else {
+                    bothList.add(host);
+                }
+            }
+        }
+
+        // 使用带网络标识的批量解析方法
+        if (v4List.size() > 0) {
+            mBatchResolveHostService.batchResolveHostAsync(v4List, RequestIpType.v4);
+        }
+        if (v6List.size() > 0) {
+            mBatchResolveHostService.batchResolveHostAsync(v6List, RequestIpType.v6);
+        }
+        if (bothList.size() > 0) {
+            mBatchResolveHostService.batchResolveHostAsync(bothList, RequestIpType.both);
+        }
+
+        if (v4List.size() > 0 || v6List.size() > 0 || bothList.size() > 0) {
+            if (HttpDnsLog.isPrint()) {
+                HttpDnsLog.d("smart resolve " + (v4List.size() + v6List.size() + bothList.size()) + " hosts for network " + requestNetworkKey);
+            }
+        }
+    }
+
+    /**
+     * 检查指定网络环境下是否需要解析域名
+     *
+     * @param host 域名
+     * @param type 解析类型
+     * @param networkKey 网络标识
+     * @return 是否需要解析
+     */
+    private boolean needsResolveInNetwork(String host, RequestIpType type, String networkKey) {
+        // 检查指定网络环境下是否有有效缓存
+        ResolveHostCache cache = mResultRepo.getCacheGroup().getCache(networkKey);
+        HTTPDNSResultWrapper result = cache.getResult(host, type);
+        return result == null || result.isExpired();
+    }
+
+    /**
+     * 获取当前网络标识，用于网络隔离缓存
+     *
+     * @return 当前网络标识
+     */
+    private String getCurrentNetworkKey() {
+        return NetworkStateManager.getInstance().getCurrentNetworkKey();
+    }
 }

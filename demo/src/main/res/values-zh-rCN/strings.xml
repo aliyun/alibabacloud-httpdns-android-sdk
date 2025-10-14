@@ -6,8 +6,13 @@
     <string name="title_best_practice">最佳实践</string>
     <string name="title_info">信息</string>
 
+    <string name="enable_auth_mode">开启鉴权模式</string>
+    <string name="secret_key_location">SecretKey通过config配置</string>
+    <string name="enable_encrypt_mode">开启加密模式</string>
     <string name="enable_expired_ip">允许过期IP</string>
     <string name="enable_local_cache">开启持久化缓存IP</string>
+    <string name="cache_expire_time">缓存过期时间</string>
+    <string name="cache_expire_time_unit">缓存过期时间的单位是天.</string>
     <string name="enable_https">开启HTTPS</string>
     <string name="enable_downgrade">允许降级</string>
     <string name="enable_network_changed_pre_resolve">网络切换自动刷新</string>
@@ -21,6 +26,7 @@
     <string name="singapore">新加坡</string>
     <string name="germany">德国</string>
     <string name="america">美国</string>
+    <string name="pre">预发</string>
 
     <string name="select_region">选择Region</string>
     <string name="confirm">确认</string>
@@ -55,6 +61,7 @@
     <string name="add_pre_resolve">添加预解析域名</string>
     <string name="add_pre_resolve_hint">请输入要预解析的域名</string>
     <string name="pre_resolve_list">预解析域名列表</string>
+    <string name="add_tag">添加Tag</string>
     <string name="pre_resolve_host_duplicate">%s域名已经被添加至预解析列表，请勿重复添加</string>
     <string name="init_httpdns">初始化HttpDns</string>
     <string name="batch_resolve_list">批量解析域名列表</string>
@@ -70,6 +77,8 @@
     <string name="add_host_fixed_ip">添加主站域名</string>
     <string name="host_fixed_ip_empty">主站域名为空</string>
     <string name="host_fixed_ip_duplicate">%s主站域名已经被添加，请勿重复添加</string>
+
+    <string name="add_tag_hint">请输入标签</string>
 
     <string name="add_host_to_black_list_hint">请输入不使用HttpDns解析的域名</string>
     <string name="add_host_to_black_list">添加不使用HttpDns的域名</string>
@@ -95,6 +104,7 @@
     <string name="delete">删除</string>
     <string name="clear_all_cache">清除所有HttpDNS配置缓存</string>
     <string name="all_cache_cleared">所有HttpDNS配置缓存都已清除</string>
+    <string name="clear_dns_cache">清空Dns缓存（500次）</string>
 
     <string name="input_the_sdns_params">自定义解析的参数</string>
     <string name="input_the_sdns_params_help_text">json对象格式</string>

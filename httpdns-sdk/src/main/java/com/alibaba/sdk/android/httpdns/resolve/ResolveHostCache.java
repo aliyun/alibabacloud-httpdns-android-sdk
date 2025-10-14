@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.alibaba.sdk.android.httpdns.HTTPDNSResult;
+import com.alibaba.sdk.android.httpdns.HTTPDNSResultWrapper;
 import com.alibaba.sdk.android.httpdns.RequestIpType;
 import com.alibaba.sdk.android.httpdns.cache.HostRecord;
 
@@ -22,28 +22,28 @@ public class ResolveHostCache {
 	/**
 	 * v4的返回结果
 	 */
-	private final ConcurrentHashMap<String, HTTPDNSResult> mV4HttpDnsResults
+	private final ConcurrentHashMap<String, HTTPDNSResultWrapper> mV4HttpDnsResults
 		= new ConcurrentHashMap<>();
 	/**
 	 * v6的返回结果
 	 */
-	private final ConcurrentHashMap<String, HTTPDNSResult> mV6HttpDnsResults
+	private final ConcurrentHashMap<String, HTTPDNSResultWrapper> mV6HttpDnsResults
 		= new ConcurrentHashMap<>();
 	/**
 	 * 同时解析4 6的结果
 	 */
-	private final ConcurrentHashMap<String, HTTPDNSResult> mBothHttpDnsResults =
+	private final ConcurrentHashMap<String, HTTPDNSResultWrapper> mBothHttpDnsResults =
 		new ConcurrentHashMap<>();
 
-	public HTTPDNSResult getResult(String host, RequestIpType type) {
-		HTTPDNSResult result = obtainHttpResult(host, type);
+	public HTTPDNSResultWrapper getResult(String host, RequestIpType type) {
+		HTTPDNSResultWrapper result = obtainHttpResult(host, type);
 		result = buildHttpResult(host, type, result);
 		cacheResult(host, type, result);
 		return result;
 	}
 
-	private HTTPDNSResult obtainHttpResult(String host, RequestIpType type) {
-		HTTPDNSResult result = null;
+	private HTTPDNSResultWrapper obtainHttpResult(String host, RequestIpType type) {
+		HTTPDNSResultWrapper result = null;
 		switch (type) {
 			case v6:
 				result = mV6HttpDnsResults.get(host);
@@ -58,7 +58,7 @@ public class ResolveHostCache {
 		return result;
 	}
 
-	private void cacheResult(String host, RequestIpType type, HTTPDNSResult result) {
+	private void cacheResult(String host, RequestIpType type, HTTPDNSResultWrapper result) {
 		if (result != null) {
 			switch (type) {
 				case v6:
@@ -74,14 +74,14 @@ public class ResolveHostCache {
 		}
 	}
 
-	private HTTPDNSResult buildHttpResult(String host, RequestIpType type, HTTPDNSResult result) {
+	private HTTPDNSResultWrapper buildHttpResult(String host, RequestIpType type, HTTPDNSResultWrapper result) {
 		HostRecord record;
 		switch (type) {
 			case v6:
 				record = mV6Records.get(host);
 				if (record != null) {
 					if (result == null) {
-						result = new HTTPDNSResult(host);
+						result = new HTTPDNSResultWrapper(host);
 					}
 					result.update(record);
 				}
@@ -90,7 +90,7 @@ public class ResolveHostCache {
 				record = mV4Records.get(host);
 				if (record != null) {
 					if (result == null) {
-						result = new HTTPDNSResult(host);
+						result = new HTTPDNSResultWrapper(host);
 					}
 					result.update(record);
 				}
@@ -102,7 +102,7 @@ public class ResolveHostCache {
 					return result;
 				}
 				if (result == null) {
-					result = new HTTPDNSResult(host);
+					result = new HTTPDNSResultWrapper(host);
 				}
 				ArrayList<HostRecord> records = new ArrayList<>();
 				records.add(record);
@@ -114,13 +114,13 @@ public class ResolveHostCache {
 	}
 
 	public HostRecord update(String region, String host, RequestIpType type, String extra,
-							 String cacheKey, String[] ips, int ttl) {
+							 String cacheKey, String[] ips, int ttl, String serverIp, String noIpCode) {
 		HostRecord record = null;
 		switch (type) {
 			case v4:
 				record = mV4Records.get(host);
 				if (record == null) {
-					record = HostRecord.create(region, host, type, extra, cacheKey, ips, ttl);
+					record = HostRecord.create(region, host, type, extra, cacheKey, ips, ttl, serverIp, noIpCode);
 					mV4Records.put(host, record);
 				} else {
 					record.setRegion(region);
@@ -129,12 +129,14 @@ public class ResolveHostCache {
 					record.setTtl(ttl);
 					record.setExtra(extra);
 					record.setFromDB(false);
+					record.setServerIp(serverIp);
+					record.setNoIpCode(noIpCode);
 				}
 				break;
 			case v6:
 				record = mV6Records.get(host);
 				if (record == null) {
-					record = HostRecord.create(region, host, type, extra, cacheKey, ips, ttl);
+					record = HostRecord.create(region, host, type, extra, cacheKey, ips, ttl, serverIp, noIpCode);
 					mV6Records.put(host, record);
 				} else {
 					record.setRegion(region);
@@ -143,6 +145,8 @@ public class ResolveHostCache {
 					record.setTtl(ttl);
 					record.setExtra(extra);
 					record.setFromDB(false);
+					record.setServerIp(serverIp);
+					record.setNoIpCode(noIpCode);
 				}
 				break;
 			default:
