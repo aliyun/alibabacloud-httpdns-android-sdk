@@ -33,14 +33,6 @@ dependencyResolutionManagement {
             url "https://maven.aliyun.com/repository/google"
             name 'google'
         }
-        maven {
-            url 'http://nexus-ce.emas-poc.com/repository/maven-public/'
-            credentials {
-                username = 'CenterExperience'
-                password = '77kkyy99'
-            }
-            allowInsecureProtocol = true
-        }
     }
 }
 

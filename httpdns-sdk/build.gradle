@@ -122,15 +122,7 @@ afterEvaluate {
             if (project.android.defaultConfig.versionName.endsWith("-local-SNAPSHOT")) {
                 // only maven local
             } else if (project.android.defaultConfig.versionName.endsWith("-SNAPSHOT")) {
-                maven {
-                    name "EMAS"
-                    url "http://nexus-ce.emas-poc.com/repository/maven-snapshots/"
-                    credentials {
-                        username = "emasdev"
-                        password = "emas1a2s3dqwe"
-                    }
-                    allowInsecureProtocol = true
-                }
+                
             }
         }
     }
